@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { getCourseBySlug } from "@/data/courses";
 import { getEventBySlug } from "@/data/events";
 
@@ -42,7 +42,7 @@ export async function createCheckoutSession(formData: FormData) {
 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
-  const session = await stripe.checkout.sessions.create({
+  const session = await getStripe().checkout.sessions.create({
     mode: "payment",
     line_items: [
       {
