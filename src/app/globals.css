@@ -99,6 +99,35 @@ body {
   animation: gradient-shift 8s ease-in-out infinite;
 }
 
+/* Continuous color cycle for the brushstroke under the title.
+   Uses richer natural pigments — ochre, cinnabar, jade, indigo —
+   cycled quickly enough to be visible. */
+@keyframes brush-stop-1 {
+  0%   { stop-color: #d97706; } /* ochre */
+  25%  { stop-color: #c2410c; } /* cinnabar */
+  50%  { stop-color: #047857; } /* jade */
+  75%  { stop-color: #1d4ed8; } /* indigo */
+  100% { stop-color: #d97706; }
+}
+@keyframes brush-stop-2 {
+  0%   { stop-color: #c2410c; }
+  25%  { stop-color: #047857; }
+  50%  { stop-color: #1d4ed8; }
+  75%  { stop-color: #d97706; }
+  100% { stop-color: #c2410c; }
+}
+@keyframes brush-stop-3 {
+  0%   { stop-color: #047857; }
+  25%  { stop-color: #1d4ed8; }
+  50%  { stop-color: #d97706; }
+  75%  { stop-color: #c2410c; }
+  100% { stop-color: #047857; }
+}
+
+.brush-stop-1 { animation: brush-stop-1 4s linear infinite; }
+.brush-stop-2 { animation: brush-stop-2 4s linear infinite; }
+.brush-stop-3 { animation: brush-stop-3 4s linear infinite; }
+
 /* Subtle paper grain texture overlay */
 .texture-paper {
   background-image:

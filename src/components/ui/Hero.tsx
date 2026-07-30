@@ -35,7 +35,7 @@ export default function Hero() {
           </h1>
         </div>
 
-        {/* Ink brush stroke — ochre to ink to celadon */}
+        {/* Ink brush stroke — colors cycle continuously */}
         <svg
           className="mx-auto mt-4 h-4 w-64"
           viewBox="0 0 400 24"
@@ -47,15 +47,17 @@ export default function Hero() {
             className="animate-ink-draw"
             d="M8 14 C 60 4, 120 20, 180 10 S 300 20, 392 8"
             stroke="url(#brushGradient)"
-            strokeWidth="3"
+            strokeWidth="4"
             strokeLinecap="round"
             fill="none"
           />
           <defs>
             <linearGradient id="brushGradient" x1="0" y1="0" x2="400" y2="0" gradientUnits="userSpaceOnUse">
-              <stop offset="0%" stopColor="#a16207" />
-              <stop offset="50%" stopColor="#57534e" />
-              <stop offset="100%" stopColor="#047857" />
+              <stop className="brush-stop-1" offset="0%" stopColor="#a16207" stopOpacity="0" />
+              <stop className="brush-stop-1" offset="18%" stopColor="#a16207" stopOpacity="1" />
+              <stop className="brush-stop-2" offset="50%" stopColor="#57534e" stopOpacity="1" />
+              <stop className="brush-stop-3" offset="82%" stopColor="#047857" stopOpacity="1" />
+              <stop className="brush-stop-3" offset="100%" stopColor="#047857" stopOpacity="0" />
             </linearGradient>
           </defs>
         </svg>
