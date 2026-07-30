@@ -1,4 +1,5 @@
 import BrushDivider from "./BrushDivider";
+import InkSeal from "./InkSeal";
 
 interface PageHeroProps {
   title: string;
@@ -18,11 +19,22 @@ export default function PageHero({ title, subtitle }: PageHeroProps) {
       <div className="pointer-events-none absolute inset-0 texture-paper opacity-40" />
 
       <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-        <h1 className="animate-fade-rise text-4xl font-bold tracking-tight sm:text-5xl">
-          <span className="animate-gradient bg-gradient-to-r from-amber-100 via-stone-100 to-emerald-100 bg-clip-text text-transparent">
-            {title}
-          </span>
-        </h1>
+        {/* Title with two seals at diagonal corners */}
+        <div className="relative inline-block">
+          <div className="pointer-events-none absolute -right-10 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center sm:-right-14">
+            <div className="translate-x-0.5">
+              <InkSeal character="燕" size={34} rotation={-5} seed={7} />
+            </div>
+            <div className="-mt-1 -translate-x-1">
+              <InkSeal character="来" size={34} rotation={4} seed={19} />
+            </div>
+          </div>
+          <h1 className="animate-fade-rise text-4xl font-bold tracking-tight sm:text-5xl">
+            <span className="animate-gradient bg-gradient-to-r from-amber-100 via-stone-100 to-emerald-100 bg-clip-text text-transparent">
+              {title}
+            </span>
+          </h1>
+        </div>
         <div className="animate-fade-rise animation-delay-200">
           <BrushDivider />
         </div>
