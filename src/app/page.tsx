@@ -1,8 +1,10 @@
 import Link from "next/link";
 import Hero from "@/components/ui/Hero";
 import SectionHeading from "@/components/ui/SectionHeading";
+import BrushDivider from "@/components/ui/BrushDivider";
 import CourseCard from "@/components/courses/CourseCard";
 import EventCard from "@/components/events/EventCard";
+import NewsletterSignup from "@/components/newsletter/NewsletterSignup";
 import { getFeaturedCourses } from "@/data/courses";
 import { getUpcomingEvents } from "@/data/events";
 import { Category } from "@/types";
@@ -18,54 +20,24 @@ const categoryCards: {
     category: "drawing",
     label: "Drawing",
     labelCn: "素描",
-    color: "from-slate-700 via-indigo-700 to-blue-800",
-    glow: "shadow-blue-500/20",
+    color: "from-stone-800 via-slate-800 to-stone-900",
+    glow: "shadow-slate-900/30",
   },
   {
     category: "painting",
     label: "Painting",
     labelCn: "绘画",
-    color: "from-amber-600 via-rose-600 to-orange-700",
-    glow: "shadow-amber-500/20",
+    color: "from-amber-800 via-orange-900 to-stone-900",
+    glow: "shadow-amber-900/30",
   },
   {
     category: "ceramic",
     label: "Ceramic",
     labelCn: "陶艺",
-    color: "from-emerald-700 via-teal-700 to-emerald-800",
-    glow: "shadow-emerald-500/20",
+    color: "from-emerald-800 via-stone-800 to-emerald-900",
+    glow: "shadow-emerald-900/30",
   },
 ];
-
-function BrushDivider() {
-  return (
-    <div className="mx-auto flex max-w-md items-center justify-center py-2">
-      <svg
-        className="h-3 w-full"
-        viewBox="0 0 400 12"
-        fill="none"
-        xmlns="http://www.w3.org/2000/svg"
-        aria-hidden="true"
-      >
-        <path
-          d="M4 6 C 60 2, 120 10, 200 6 S 340 2, 396 6"
-          stroke="url(#dividerGradient)"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          fill="none"
-          opacity="0.5"
-        />
-        <defs>
-          <linearGradient id="dividerGradient" x1="0" y1="0" x2="400" y2="0" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#fcd34d" stopOpacity="0" />
-            <stop offset="50%" stopColor="#f43f5e" />
-            <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-      </svg>
-    </div>
-  );
-}
 
 export default function HomePage() {
   const featuredCourses = getFeaturedCourses();
@@ -76,8 +48,10 @@ export default function HomePage() {
       <Hero />
 
       {/* Categories */}
-      <section className="relative py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-16 sm:py-20">
+        <div className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-amber-200/40 blur-3xl" />
+        <div className="pointer-events-none absolute -right-40 bottom-20 h-[28rem] w-[28rem] rounded-full bg-emerald-200/30 blur-3xl" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading
             title="Explore Our Art Forms"
             subtitle="From pencil to clay, find the medium that speaks to you"
@@ -108,10 +82,10 @@ export default function HomePage() {
       </section>
 
       {/* Featured Courses */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-gray-50 via-amber-50/30 to-gray-50 py-16 sm:py-20">
-        {/* Subtle painterly accents */}
-        <div className="pointer-events-none absolute -left-40 top-20 h-96 w-96 rounded-full bg-rose-200/30 blur-3xl" />
-        <div className="pointer-events-none absolute -right-40 bottom-20 h-96 w-96 rounded-full bg-sky-200/30 blur-3xl" />
+      <section className="relative overflow-hidden bg-gradient-to-b from-stone-50 via-amber-50/50 to-stone-100 py-16 sm:py-20">
+        <div className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-orange-200/30 blur-3xl" />
+        <div className="pointer-events-none absolute -right-40 bottom-20 h-[28rem] w-[28rem] rounded-full bg-amber-200/40 blur-3xl" />
+        <div className="pointer-events-none absolute left-1/3 top-1/2 h-72 w-72 rounded-full bg-emerald-200/25 blur-3xl" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading
             title="Featured Courses"
@@ -126,7 +100,7 @@ export default function HomePage() {
           <div className="mt-10 text-center">
             <Link
               href="/courses"
-              className="inline-flex items-center rounded-lg border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100"
+              className="inline-flex items-center rounded-lg border border-stone-400/70 bg-white/70 px-6 py-3 text-sm font-semibold text-stone-800 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-amber-700/70 hover:bg-white hover:shadow-lg hover:shadow-amber-900/15"
             >
               View All Courses
             </Link>
@@ -135,8 +109,10 @@ export default function HomePage() {
       </section>
 
       {/* Upcoming Events */}
-      <section className="py-16 sm:py-20">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <section className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/50 to-stone-50 py-16 sm:py-20">
+        <div className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-emerald-200/25 blur-3xl" />
+        <div className="pointer-events-none absolute -right-40 bottom-20 h-[28rem] w-[28rem] rounded-full bg-orange-200/30 blur-3xl" />
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading
             title="Upcoming Events"
             subtitle="Workshops, open studios, and community gatherings"
@@ -150,11 +126,20 @@ export default function HomePage() {
           <div className="mt-10 text-center">
             <Link
               href="/events"
-              className="inline-flex items-center rounded-lg border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100"
+              className="inline-flex items-center rounded-lg border border-stone-400/70 bg-white/70 px-6 py-3 text-sm font-semibold text-stone-800 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-amber-700/70 hover:bg-white hover:shadow-lg hover:shadow-amber-900/15"
             >
               View All Events
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* Keep in Touch */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-stone-50 via-amber-50/50 to-stone-100 py-16 sm:py-20">
+        <div className="pointer-events-none absolute -left-20 top-20 h-72 w-72 rounded-full bg-amber-200/30 blur-3xl" />
+        <div className="pointer-events-none absolute -right-20 bottom-20 h-72 w-72 rounded-full bg-emerald-200/25 blur-3xl" />
+        <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          <NewsletterSignup />
         </div>
       </section>
     </>

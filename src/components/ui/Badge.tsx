@@ -2,9 +2,9 @@ import { cn } from "@/lib/utils";
 import { Category } from "@/types";
 
 const categoryColors: Record<Category, string> = {
-  drawing: "bg-blue-100 text-blue-800",
-  painting: "bg-amber-100 text-amber-800",
-  ceramic: "bg-green-100 text-green-800",
+  drawing: "bg-stone-200 text-stone-800",
+  painting: "bg-amber-100 text-amber-900",
+  ceramic: "bg-emerald-100 text-emerald-900",
 };
 
 interface BadgeProps {
