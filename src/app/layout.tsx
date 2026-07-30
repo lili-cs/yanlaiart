@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Yan Lai Art | 燕来艺术",
+    default: "Yan Lai Art",
     template: "%s | Yan Lai Art",
   },
   description:

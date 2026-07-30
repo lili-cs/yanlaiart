@@ -26,6 +26,16 @@ export default function Footer() {
                   Events
                 </Link>
               </li>
+              <li>
+                <Link href="/about" className="text-sm text-gray-600 hover:text-gray-900">
+                  About Us
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="text-sm text-gray-600 hover:text-gray-900">
+                  Contact Us
+                </Link>
+              </li>
             </ul>
           </div>
           <div>
@@ -33,7 +43,7 @@ export default function Footer() {
             <ul className="mt-2 space-y-2 text-sm text-gray-600">
               <li>info@yanlaiart.com</li>
               <li>(555) 123-4567</li>
-              <li>123 Art Street, Creative District</li>
+              <li>Pennington, NJ 08534</li>
             </ul>
           </div>
         </div>

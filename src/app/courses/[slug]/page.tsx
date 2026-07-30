@@ -52,6 +52,24 @@ export default async function CourseDetailPage({ params }: Props) {
           <div className="flex flex-wrap items-center gap-3">
             <Badge category={course.category} />
             <span className="text-sm text-gray-500">{course.level}</span>
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-sm font-medium ${
+                course.format === "online"
+                  ? "bg-blue-100 text-blue-700"
+                  : "bg-amber-100 text-amber-700"
+              }`}
+            >
+              {course.format === "online" ? "Online" : "In-Person"}
+            </span>
+            <span
+              className={`rounded-full px-2.5 py-0.5 text-sm font-medium ${
+                course.status === "open"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-purple-100 text-purple-700"
+              }`}
+            >
+              {course.status === "open" ? "Open Now" : "Upcoming"}
+            </span>
           </div>
 
           <h1 className="mt-4 text-3xl font-bold text-gray-900">
@@ -59,17 +77,28 @@ export default async function CourseDetailPage({ params }: Props) {
           </h1>
           <p className="mt-1 text-lg text-gray-500">{course.titleCn}</p>
 
-          <div className="mt-6 grid gap-4 sm:grid-cols-3">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-lg bg-gray-50 p-4">
               <p className="text-sm text-gray-500">Price</p>
               <p className="text-xl font-bold text-gray-900">
                 {formatPrice(course.price)}
+                {course.priceUnit === "hourly" && (
+                  <span className="text-base font-normal text-gray-500">
+                    /hour
+                  </span>
+                )}
               </p>
             </div>
             <div className="rounded-lg bg-gray-50 p-4">
               <p className="text-sm text-gray-500">Duration</p>
               <p className="text-xl font-bold text-gray-900">
                 {course.duration}
+              </p>
+            </div>
+            <div className="rounded-lg bg-gray-50 p-4">
+              <p className="text-sm text-gray-500">Format</p>
+              <p className="text-xl font-bold text-gray-900">
+                {course.format === "online" ? "Online" : "In-Person"}
               </p>
             </div>
             <div className="rounded-lg bg-gray-50 p-4">

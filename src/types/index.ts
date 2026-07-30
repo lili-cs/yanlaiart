@@ -8,8 +8,11 @@ export interface Course {
   description: string;
   longDescription: string;
   price: number; // in cents
+  priceUnit: "total" | "hourly";
   duration: string;
   level: "Beginner" | "Intermediate" | "Advanced" | "All Levels";
+  format: "in-person" | "online";
+  status: "upcoming" | "open";
   maxStudents: number;
   imageUrl: string;
   featured: boolean;

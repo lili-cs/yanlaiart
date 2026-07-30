@@ -22,9 +22,27 @@ export default function CourseCard({ course }: CourseCardProps) {
         />
       </div>
       <div className="flex flex-1 flex-col p-5">
-        <div className="mb-2 flex items-center gap-2">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
           <Badge category={course.category} />
           <span className="text-xs text-gray-500">{course.level}</span>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+              course.format === "online"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-amber-100 text-amber-700"
+            }`}
+          >
+            {course.format === "online" ? "Online" : "In-Person"}
+          </span>
+          <span
+            className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+              course.status === "open"
+                ? "bg-green-100 text-green-700"
+                : "bg-purple-100 text-purple-700"
+            }`}
+          >
+            {course.status === "open" ? "Open Now" : "Upcoming"}
+          </span>
         </div>
         <h3 className="text-lg font-semibold text-gray-900 group-hover:text-gray-700">
           {course.title}
@@ -36,6 +54,9 @@ export default function CourseCard({ course }: CourseCardProps) {
         <div className="mt-4 flex items-center justify-between border-t border-gray-100 pt-4">
           <span className="text-lg font-bold text-gray-900">
             {formatPrice(course.price)}
+            {course.priceUnit === "hourly" && (
+              <span className="text-sm font-normal text-gray-500">/hour</span>
+            )}
           </span>
           <span className="text-sm text-gray-500">{course.duration}</span>
         </div>
