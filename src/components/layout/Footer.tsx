@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
             <h3 className="text-lg font-semibold text-gray-900">
-              Yan Lai Art <span className="text-sm font-normal text-gray-500">燕来艺术</span>
+              Yan Lai Art
             </h3>
             <p className="mt-2 text-sm text-gray-600">
               Drawing, painting, and ceramic art courses for all levels.
@@ -58,7 +58,7 @@ export default function Footer() {
           </div>
         </div>
         <div className="mt-8 border-t border-gray-200 pt-8 text-center text-sm text-gray-500">
-          &copy; {new Date().getFullYear()} Yan Lai Art 燕来艺术. All rights reserved.
+          &copy; {new Date().getFullYear()} Yan Lai Art. All rights reserved.
         </div>
       </div>
     </footer>

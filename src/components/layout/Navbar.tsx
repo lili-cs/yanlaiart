@@ -19,7 +19,6 @@ export default function Navbar() {
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-2">
           <span className="text-xl font-bold text-gray-900">Yan Lai Art</span>
-          <span className="text-sm text-gray-500">燕来艺术</span>
         </Link>
 
         {/* Desktop nav */}

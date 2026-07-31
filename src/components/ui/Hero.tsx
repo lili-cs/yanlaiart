@@ -1,5 +1,4 @@
 import Link from "next/link";
-import InkSeal from "./InkSeal";
 
 export default function Hero() {
   return (
@@ -17,23 +16,11 @@ export default function Hero() {
       <div className="pointer-events-none absolute inset-0 texture-paper opacity-40" />
 
       <div className="relative mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-        {/* Title with two seals at diagonal corners */}
-        <div className="relative inline-block">
-          {/* Signature seal block — two stamps close together, right of title */}
-          <div className="pointer-events-none absolute -right-14 top-1/2 z-20 flex -translate-y-1/2 flex-col items-center sm:-right-20">
-            <div className="translate-x-1">
-              <InkSeal character="燕" size={44} rotation={-5} seed={7} />
-            </div>
-            <div className="-mt-1 -translate-x-1.5">
-              <InkSeal character="来" size={44} rotation={4} seed={19} />
-            </div>
-          </div>
-          <h1 className="animate-fade-rise text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
-            <span className="animate-gradient bg-gradient-to-r from-amber-100 via-stone-100 to-emerald-100 bg-clip-text text-transparent">
-              Yan Lai Art
-            </span>
-          </h1>
-        </div>
+        <h1 className="animate-fade-rise text-5xl font-bold tracking-tight sm:text-6xl lg:text-7xl">
+          <span className="animate-gradient bg-gradient-to-r from-amber-100 via-stone-100 to-emerald-100 bg-clip-text text-transparent">
+            Yan Lai Art
+          </span>
+        </h1>
 
         {/* Ink brush stroke — colors cycle continuously */}
         <svg
