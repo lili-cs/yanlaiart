@@ -4,7 +4,7 @@ import PageHero from "@/components/ui/PageHero";
 export const metadata: Metadata = {
   title: "About Us",
   description:
-    "Learn about Yan Lai Art — our story, our teaching philosophy, and our welcoming community of artists and makers.",
+    "In a fast-moving world, Yan Lai Art invites children — and everyone — to slow down, listen inward, and let painting and handcraft become a quiet conversation with the self.",
 };
 
 export default function AboutPage() {
@@ -12,82 +12,71 @@ export default function AboutPage() {
     <>
       <PageHero
         title="About Yan Lai Art"
-        subtitle="A studio for makers, learners, and lifelong artists"
+        subtitle="A quiet space to slow down, listen inward, and make"
       />
-      <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-16 sm:py-20">
+      <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-20 sm:py-28">
         <div className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-amber-200/40 blur-3xl" />
         <div className="pointer-events-none absolute -right-40 top-1/3 h-[28rem] w-[28rem] rounded-full bg-emerald-200/30 blur-3xl" />
         <div className="pointer-events-none absolute -left-20 bottom-20 h-96 w-96 rounded-full bg-orange-200/30 blur-3xl" />
-        <div className="relative mx-auto max-w-4xl space-y-12 px-4 sm:px-6 lg:px-8">
-        <section>
-          <h2 className="text-2xl font-semibold text-stone-900">Our Story</h2>
-          <p className="mt-4 leading-relaxed text-stone-700">
-            Yan Lai Art was founded on a simple belief: creativity is for everyone.
-            What began as a small drawing circle has grown into a welcoming studio
-            that offers courses in drawing, painting, and ceramics — as well as
-            online lectures on the traditions of Eastern and Western art. Our
-            students range from complete beginners picking up a pencil for the
-            first time to seasoned makers refining their craft.
-          </p>
-        </section>
+        <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <article className="relative overflow-hidden rounded-3xl border border-stone-300/60 bg-stone-50/85 px-6 py-14 shadow-sm backdrop-blur-sm sm:px-14 sm:py-20">
+            <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-amber-200/40 blur-3xl" />
+            <div className="pointer-events-none absolute -left-16 -bottom-16 h-56 w-56 rounded-full bg-emerald-200/30 blur-3xl" />
 
-        <section>
-          <h2 className="text-2xl font-semibold text-stone-900">
-            How We Teach
-          </h2>
-          <p className="mt-4 leading-relaxed text-stone-700">
-            We believe great art teaching balances rigor with encouragement.
-            Every course is structured around small class sizes, direct
-            observation, and generous critique. Whether you are learning
-            perspective in Fundamentals of Drawing, throwing your first bowl in
-            the pottery studio, or discussing brushwork in the appreciation
-            course, our instructors meet you where you are and help you take the
-            next step.
-          </p>
-        </section>
+            <p
+              lang="zh-Hans"
+              style={{
+                fontFamily:
+                  'var(--font-noto-serif-sc), "Songti SC", "STSong", "SimSun", "Noto Serif CJK SC", serif',
+                textIndent: "2em",
+                ...({ textJustify: "inter-ideograph" } as unknown as React.CSSProperties),
+              }}
+              className="relative mx-auto max-w-2xl text-justify text-[1.15rem] font-medium leading-[2.15] tracking-[0.04em] text-stone-900 sm:text-[1.35rem]"
+            >
+              在信息高速发展的现在，我们更关心孩子如何与自己对话。在自然之中，在安静的环境中，慢下来，与自己的感受紧密合作。绘画和手工，是最好的体验方式。走近<span className="mx-[0.15em] font-semibold tracking-[0.14em] text-amber-800">YANLAI&nbsp;ART</span>，让这个空间滋养你的身心。
+            </p>
 
-        <section>
-          <h2 className="text-2xl font-semibold text-stone-900">What We Offer</h2>
-          <div className="mt-4 grid gap-6 sm:grid-cols-3">
-            <div className="group relative overflow-hidden rounded-2xl border border-stone-300/60 bg-stone-50/85 p-5 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-stone-400 hover:shadow-xl hover:shadow-stone-500/15">
-              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-slate-300/30 blur-3xl transition-transform group-hover:scale-150" />
-              <div className="pointer-events-none absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-stone-300/30 blur-3xl transition-transform group-hover:scale-150" />
-              <h3 className="relative text-lg font-semibold text-stone-900">Drawing</h3>
-              <p className="relative mt-2 text-sm text-stone-700">
-                Fundamentals, creative still life, and outdoor sketching for
-                every level.
+            <div className="relative mx-auto mt-12 flex items-center justify-center gap-3">
+              <span className="h-px w-16 bg-gradient-to-r from-transparent to-stone-400/70" />
+              <span className="h-1.5 w-1.5 rotate-45 bg-amber-700/60" />
+              <span className="h-px w-16 bg-gradient-to-l from-transparent to-stone-400/70" />
+            </div>
+
+            <div className="relative mt-12 space-y-6 text-stone-700">
+              <p className="text-lg leading-[1.9] first-letter:float-left first-letter:mr-2 first-letter:mt-1 first-letter:font-serif first-letter:text-5xl first-letter:font-semibold first-letter:leading-none first-letter:text-amber-800 sm:text-xl sm:leading-[1.9]">
+                In today&rsquo;s fast-paced, information-driven world, we
+                believe that one of the most valuable gifts we can offer
+                children is the opportunity to connect with themselves and
+                listen to their own inner voice.
+              </p>
+
+              <p className="text-base leading-[1.9] text-stone-600 sm:text-lg">
+                We believe that true growth is not only about acquiring
+                knowledge, but also about nurturing{" "}
+                <span className="font-medium text-stone-800">creativity</span>,{" "}
+                <span className="font-medium text-stone-800">mindfulness</span>,
+                and{" "}
+                <span className="font-medium text-stone-800">
+                  emotional awareness
+                </span>
+                . In a peaceful, nature-inspired environment, children are
+                encouraged to slow down, explore freely, and express
+                themselves through painting, crafts, and other forms of
+                artistic creation.
+              </p>
+
+              <p className="text-base leading-[1.9] text-stone-600 sm:text-lg">
+                At{" "}
+                <span className="font-semibold tracking-[0.12em] text-amber-800">
+                  YANLAI ART
+                </span>
+                , we strive to create a warm and inspiring space where art
+                becomes a bridge to self-discovery, imagination, and overall
+                well-being. We invite every child and family to experience the
+                joy, creativity, and nourishment that art can bring.
               </p>
             </div>
-            <div className="group relative overflow-hidden rounded-2xl border border-amber-300/60 bg-stone-50/85 p-5 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-amber-700/60 hover:shadow-xl hover:shadow-amber-900/15">
-              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-amber-300/40 blur-3xl transition-transform group-hover:scale-150" />
-              <div className="pointer-events-none absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-orange-300/30 blur-3xl transition-transform group-hover:scale-150" />
-              <h3 className="relative text-lg font-semibold text-stone-900">Painting</h3>
-              <p className="relative mt-2 text-sm text-stone-700">
-                Watercolor landscapes, acrylic abstract art, and comparative art
-                appreciation.
-              </p>
-            </div>
-            <div className="group relative overflow-hidden rounded-2xl border border-emerald-300/60 bg-stone-50/85 p-5 shadow-sm backdrop-blur-sm transition-all hover:-translate-y-1 hover:border-emerald-700/60 hover:shadow-xl hover:shadow-emerald-900/15">
-              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-emerald-300/40 blur-3xl transition-transform group-hover:scale-150" />
-              <div className="pointer-events-none absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-stone-300/30 blur-3xl transition-transform group-hover:scale-150" />
-              <h3 className="relative text-lg font-semibold text-stone-900">Ceramic</h3>
-              <p className="relative mt-2 text-sm text-stone-700">
-                Hand-building, wheel throwing, and sculpture — book studio time
-                by the hour.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section>
-          <h2 className="text-2xl font-semibold text-stone-900">Our Studio</h2>
-          <p className="mt-4 leading-relaxed text-stone-700">
-            Our studio is a bright, well-equipped space designed for focused work
-            and creative exchange. Easels, drawing horses, potter&apos;s wheels,
-            and a full glaze library are all here waiting for you. Come make
-            something with us.
-          </p>
-        </section>
+          </article>
         </div>
       </div>
     </>
