@@ -113,7 +113,6 @@ export const courses: Course[] = [
     level: "All Levels",
     format: "online",
     status: "upcoming",
-    maxStudents: 8,
     imageUrl: "https://placehold.co/800x500/fef3c7/92400e?text=Art+Appreciation",
     featured: true,
   },

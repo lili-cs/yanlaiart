@@ -42,7 +42,7 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold text-gray-900">Contact</h4>
             <ul className="mt-2 space-y-2 text-sm text-gray-600">
-              <li>info@yanlaiart.com</li>
+              <li>yichenhot@icloud.com</li>
               <li>(555) 123-4567</li>
               <li>Pennington, NJ 08534</li>
             </ul>

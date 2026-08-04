@@ -13,7 +13,7 @@ export interface Course {
   level: "Beginner" | "Intermediate" | "Advanced" | "All Levels";
   format: "in-person" | "online";
   status: "upcoming" | "open";
-  maxStudents: number;
+  maxStudents?: number;
   imageUrl: string;
   featured: boolean;
 }

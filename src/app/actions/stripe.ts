@@ -17,7 +17,13 @@ export async function createCheckoutSession(formData: FormData) {
     const course = getCourseBySlug(itemSlug);
     if (!course) throw new Error("Course not found");
     name = `${course.title} (${course.titleCn})`;
-    description = `${course.duration} · ${course.level} · Max ${course.maxStudents} students`;
+    description = [
+      course.duration,
+      course.level,
+      course.maxStudents ? `Max ${course.maxStudents} students` : null,
+    ]
+      .filter(Boolean)
+      .join(" · ");
     priceInCents = course.price;
   } else if (itemType === "event") {
     const event = getEventBySlug(itemSlug);

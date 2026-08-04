@@ -109,7 +109,9 @@ export default async function CourseDetailPage({ params }: Props) {
               <div className="rounded-xl border border-stone-300/70 bg-gradient-to-br from-stone-50 to-amber-50 p-4">
                 <p className="text-sm font-medium text-rose-700/80">Class Size</p>
                 <p className="mt-1 text-xl font-bold text-gray-900">
-                  Max {course.maxStudents} students
+                  {course.maxStudents
+                    ? `Max ${course.maxStudents} students`
+                    : "No limit"}
                 </p>
               </div>
             </div>

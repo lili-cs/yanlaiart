@@ -2,21 +2,6 @@ import { ArtEvent } from "@/types";
 
 export const events: ArtEvent[] = [
   {
-    slug: "qixi-couples-pottery-night",
-    title: "Qixi Couples' Pottery Night",
-    titleCn: "七夕情侣陶艺之夜",
-    description:
-      "Throw a pair of matching teacups with your partner to celebrate Qixi, the Double Seventh Festival.",
-    longDescription:
-      "Celebrate Qixi — China's traditional festival of love — at the potter's wheel. Come as a couple or a pair of friends and throw a matching set of two teacups together, guided by our instructor. We will finish the evening decorating your pieces with simple slip and underglaze designs. Cups will be fired and glazed, then delivered two weeks later. Tea and mooncakes served.",
-    price: 6500,
-    date: "2026-08-19",
-    time: "6:30 PM - 9:00 PM",
-    location: "Yan Lai Art Studio, Wheel Room",
-    imageUrl: "https://placehold.co/800x500/fce7f3/9d174d?text=Qixi+Couples+Pottery",
-    capacity: 12,
-  },
-  {
     slug: "mid-autumn-mooncake-molds",
     title: "Mid-Autumn Ceramic Mooncake Molds",
     titleCn: "中秋陶艺月饼模",
