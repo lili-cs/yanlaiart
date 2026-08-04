@@ -40,6 +40,8 @@ export default async function CoursesPage(props: Props) {
       <PageHero
         title="Our Courses"
         subtitle="Drawing, painting, and ceramic art for every skill level"
+        backgroundImage="/images/still-life.jpg"
+        backgroundImagePosition="center 40%"
       />
       <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-16 sm:py-20">
         <div className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-amber-200/40 blur-3xl" />

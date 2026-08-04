@@ -3,6 +3,24 @@ import Link from "next/link";
 export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-stone-900 via-neutral-900 to-stone-950 py-24 sm:py-32">
+      {/* Ghosted landscape painting — the artist's signature work as ink-wash backdrop */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/images/landscape.jpg"
+          alt=""
+          aria-hidden="true"
+          className="absolute inset-0 h-full w-full object-cover opacity-25 mix-blend-screen"
+          style={{
+            objectPosition: "center 30%",
+            maskImage:
+              "radial-gradient(ellipse at center, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0.4) 65%, transparent 90%)",
+            WebkitMaskImage:
+              "radial-gradient(ellipse at center, rgba(0,0,0,0.9) 30%, rgba(0,0,0,0.4) 65%, transparent 90%)",
+          }}
+        />
+      </div>
+
       {/* Mineral pigment washes — ink, ochre, celadon, aged cinnabar */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="animate-blob absolute -left-24 -top-24 h-[28rem] w-[28rem] rounded-full bg-amber-700/35 mix-blend-screen blur-3xl" />

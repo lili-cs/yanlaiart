@@ -13,6 +13,8 @@ export default function AboutPage() {
       <PageHero
         title="About Yan Lai Art"
         subtitle="A quiet space to slow down, listen inward, and make"
+        backgroundImage="/images/temple.jpg"
+        backgroundImagePosition="center 55%"
       />
       <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-20 sm:py-28">
         <div className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-amber-200/40 blur-3xl" />
@@ -20,6 +22,21 @@ export default function AboutPage() {
         <div className="pointer-events-none absolute -left-20 bottom-20 h-96 w-96 rounded-full bg-orange-200/30 blur-3xl" />
         <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <article className="relative overflow-hidden rounded-3xl border border-stone-300/60 bg-stone-50/85 px-6 py-14 shadow-sm backdrop-blur-sm sm:px-14 sm:py-20">
+            {/* Ghosted landscape — the mission text sits on the artist's painting like calligraphy on silk */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/landscape.jpg"
+              alt=""
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-[0.09] mix-blend-multiply"
+              style={{
+                objectPosition: "center 20%",
+                maskImage:
+                  "radial-gradient(ellipse at center, rgba(0,0,0,0.6) 20%, rgba(0,0,0,0.3) 60%, transparent 90%)",
+                WebkitMaskImage:
+                  "radial-gradient(ellipse at center, rgba(0,0,0,0.6) 20%, rgba(0,0,0,0.3) 60%, transparent 90%)",
+              }}
+            />
             <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-amber-200/40 blur-3xl" />
             <div className="pointer-events-none absolute -left-16 -bottom-16 h-56 w-56 rounded-full bg-emerald-200/30 blur-3xl" />
 

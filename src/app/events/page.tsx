@@ -17,6 +17,7 @@ export default function EventsPage() {
       <PageHero
         title="Upcoming Events"
         subtitle="Holiday workshops, seasonal gatherings, and celebrations in clay"
+        backgroundImage="/images/abstract.jpg"
       />
       <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-16 sm:py-20">
         {/* Mineral pigment washes on rice paper */}

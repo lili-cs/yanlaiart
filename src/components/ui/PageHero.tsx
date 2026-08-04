@@ -3,18 +3,67 @@ import BrushDivider from "./BrushDivider";
 interface PageHeroProps {
   title: string;
   subtitle?: string;
+  backgroundImage?: string;
+  backgroundImagePosition?: string;
+  backgroundImageStyle?: "ghost" | "reveal" | "showcase";
 }
 
-export default function PageHero({ title, subtitle }: PageHeroProps) {
+const styleMap: Record<
+  NonNullable<PageHeroProps["backgroundImageStyle"]>,
+  { className: string; mask: string; filter?: string }
+> = {
+  ghost: {
+    className: "absolute inset-0 h-full w-full object-cover opacity-30 mix-blend-screen",
+    mask: "radial-gradient(ellipse at center, rgba(0,0,0,0.9) 25%, rgba(0,0,0,0.4) 65%, transparent 90%)",
+  },
+  reveal: {
+    className: "absolute inset-0 h-full w-full object-cover opacity-45 mix-blend-screen",
+    mask: "radial-gradient(ellipse 75% 90% at 50% 50%, rgba(0,0,0,1) 40%, rgba(0,0,0,0.5) 75%, transparent 100%)",
+    filter: "sepia(0.22) hue-rotate(-12deg) saturate(0.88) brightness(1.04)",
+  },
+  showcase: {
+    className: "absolute inset-0 h-full w-full object-fill opacity-60 mix-blend-screen",
+    mask: "radial-gradient(ellipse at center, rgba(0,0,0,1) 55%, rgba(0,0,0,0.6) 80%, transparent 100%)",
+  },
+};
+
+export default function PageHero({
+  title,
+  subtitle,
+  backgroundImage,
+  backgroundImagePosition = "center center",
+  backgroundImageStyle = "ghost",
+}: PageHeroProps) {
+  const { className: imageClass, mask: imageMask, filter: imageFilter } =
+    styleMap[backgroundImageStyle];
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-stone-900 via-neutral-900 to-stone-950 py-16 sm:py-20">
-      {/* Ink + mineral pigment blobs — muted, painterly */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="animate-blob absolute -left-24 -top-16 h-80 w-80 rounded-full bg-amber-700/30 mix-blend-screen blur-3xl" />
-        <div className="animate-blob animation-delay-2000 absolute right-0 top-1/2 h-96 w-96 rounded-full bg-emerald-800/25 mix-blend-screen blur-3xl" />
-        <div className="animate-blob animation-delay-4000 absolute -bottom-20 left-1/3 h-80 w-80 rounded-full bg-orange-800/30 mix-blend-screen blur-3xl" />
-        <div className="animate-blob animation-delay-2000 absolute right-1/4 top-0 h-64 w-64 rounded-full bg-slate-600/25 mix-blend-screen blur-3xl" />
-      </div>
+      {backgroundImage && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={backgroundImage}
+            alt=""
+            aria-hidden="true"
+            className={imageClass}
+            style={{
+              objectPosition: backgroundImagePosition,
+              maskImage: imageMask,
+              WebkitMaskImage: imageMask,
+              filter: imageFilter,
+            }}
+          />
+        </div>
+      )}
+      {/* Ink + mineral pigment blobs — hidden when an image is displayed so the image is the color story */}
+      {!backgroundImage && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="animate-blob absolute -left-24 -top-16 h-80 w-80 rounded-full bg-amber-700/30 mix-blend-screen blur-3xl" />
+          <div className="animate-blob animation-delay-2000 absolute right-0 top-1/2 h-96 w-96 rounded-full bg-emerald-800/25 mix-blend-screen blur-3xl" />
+          <div className="animate-blob animation-delay-4000 absolute -bottom-20 left-1/3 h-80 w-80 rounded-full bg-orange-800/30 mix-blend-screen blur-3xl" />
+          <div className="animate-blob animation-delay-2000 absolute right-1/4 top-0 h-64 w-64 rounded-full bg-slate-600/25 mix-blend-screen blur-3xl" />
+        </div>
+      )}
       <div className="pointer-events-none absolute inset-0 texture-paper opacity-40" />
 
       <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
