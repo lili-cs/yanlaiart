@@ -37,7 +37,7 @@ export default function PageHero({
   const { className: imageClass, mask: imageMask, filter: imageFilter } =
     styleMap[backgroundImageStyle];
   return (
-    <section className="relative overflow-hidden bg-gradient-to-br from-stone-900 via-neutral-900 to-stone-950 py-16 sm:py-20">
+    <section className="relative overflow-hidden bg-gradient-to-br from-stone-900 via-neutral-900 to-stone-950 py-12 sm:py-16 md:py-20">
       {backgroundImage && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -67,7 +67,7 @@ export default function PageHero({
       <div className="pointer-events-none absolute inset-0 texture-paper opacity-40" />
 
       <div className="relative mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-        <h1 className="animate-fade-rise text-4xl font-bold tracking-tight sm:text-5xl">
+        <h1 className="animate-fade-rise text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
           <span className="animate-gradient bg-gradient-to-r from-amber-100 via-stone-100 to-emerald-100 bg-clip-text text-transparent">
             {title}
           </span>
@@ -76,7 +76,7 @@ export default function PageHero({
           <BrushDivider />
         </div>
         {subtitle && (
-          <p className="animate-fade-rise animation-delay-400 mx-auto mt-3 max-w-2xl text-lg text-stone-300">
+          <p className="animate-fade-rise animation-delay-400 mx-auto mt-3 max-w-2xl text-base text-stone-300 sm:text-lg">
             {subtitle}
           </p>
         )}

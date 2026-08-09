@@ -68,7 +68,7 @@ export default function ContactForm() {
           name="name"
           type="text"
           required
-          className="mt-1 block w-full rounded-md border border-stone-300 bg-white/90 px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700"
+          className="mt-1 block w-full rounded-md border border-stone-300 bg-white/90 px-3 py-2 text-base text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 sm:text-sm"
         />
       </div>
       <div>
@@ -83,7 +83,7 @@ export default function ContactForm() {
           name="email"
           type="email"
           required
-          className="mt-1 block w-full rounded-md border border-stone-300 bg-white/90 px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700"
+          className="mt-1 block w-full rounded-md border border-stone-300 bg-white/90 px-3 py-2 text-base text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 sm:text-sm"
         />
       </div>
       <div>
@@ -97,7 +97,7 @@ export default function ContactForm() {
           id="subject"
           name="subject"
           type="text"
-          className="mt-1 block w-full rounded-md border border-stone-300 bg-white/90 px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700"
+          className="mt-1 block w-full rounded-md border border-stone-300 bg-white/90 px-3 py-2 text-base text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 sm:text-sm"
         />
       </div>
       <div>
@@ -112,7 +112,7 @@ export default function ContactForm() {
           name="message"
           rows={5}
           required
-          className="mt-1 block w-full rounded-md border border-stone-300 bg-white/90 px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700"
+          className="mt-1 block w-full rounded-md border border-stone-300 bg-white/90 px-3 py-2 text-base text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 sm:text-sm"
         />
       </div>
 

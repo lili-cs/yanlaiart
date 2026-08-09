@@ -17,7 +17,7 @@ export default function ContactPage() {
         backgroundImage="/images/figure.jpg"
         backgroundImageStyle="showcase"
       />
-      <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-16 sm:py-20">
+      <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-12 sm:py-16 md:py-20">
         {/* Rose-bouquet watercolor melted into the upper-right corner — welcoming, floral */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -36,7 +36,7 @@ export default function ContactPage() {
         <div className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-amber-200/40 blur-3xl" />
         <div className="pointer-events-none absolute -right-40 top-1/3 h-[28rem] w-[28rem] rounded-full bg-emerald-200/30 blur-3xl" />
         <div className="pointer-events-none absolute -left-20 bottom-20 h-96 w-96 rounded-full bg-orange-200/30 blur-3xl" />
-        <div className="relative mx-auto grid max-w-4xl gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
+        <div className="relative mx-auto grid max-w-4xl gap-6 px-4 sm:gap-8 sm:px-6 md:grid-cols-2 lg:px-8">
         <div className="space-y-6">
           <div className="rounded-2xl border border-stone-300/70 bg-stone-50/85 p-6 shadow-md shadow-stone-500/10 backdrop-blur-sm transition-all hover:-translate-y-0.5 hover:border-amber-700/60 hover:shadow-xl hover:shadow-amber-900/15">
             <div className="flex items-start gap-4">

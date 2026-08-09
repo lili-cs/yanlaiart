@@ -33,12 +33,12 @@ export default function NewsletterSignup({ variant = "hero" }: NewsletterSignupP
             required
             placeholder="Your email"
             disabled={pending}
-            className="flex-1 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 placeholder-stone-400 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 disabled:opacity-50"
+            className="flex-1 rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 placeholder-stone-400 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 disabled:opacity-50 sm:text-sm"
           />
           <button
             type="submit"
             disabled={pending}
-            className="inline-flex items-center justify-center rounded-md bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-gray-800 disabled:opacity-60"
+            className="inline-flex min-h-11 items-center justify-center rounded-md bg-gray-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-gray-800 disabled:opacity-60"
           >
             {pending ? "Subscribing…" : "Subscribe"}
           </button>
@@ -85,7 +85,7 @@ export default function NewsletterSignup({ variant = "hero" }: NewsletterSignupP
               name="name"
               placeholder="Your name (optional)"
               disabled={pending}
-              className="mt-1 block w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-gray-400 backdrop-blur-sm focus:border-white/60 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-white/40 disabled:opacity-50"
+              className="mt-1 block w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-base text-white placeholder-gray-400 backdrop-blur-sm focus:border-white/60 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-white/40 disabled:opacity-50 sm:text-sm"
             />
           </div>
           <div>
@@ -99,7 +99,7 @@ export default function NewsletterSignup({ variant = "hero" }: NewsletterSignupP
               required
               placeholder="you@example.com"
               disabled={pending}
-              className="mt-1 block w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-gray-400 backdrop-blur-sm focus:border-white/60 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-white/40 disabled:opacity-50"
+              className="mt-1 block w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-base text-white placeholder-gray-400 backdrop-blur-sm focus:border-white/60 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-white/40 disabled:opacity-50 sm:text-sm"
             />
           </div>
           <div className="sm:col-span-2">
@@ -112,7 +112,7 @@ export default function NewsletterSignup({ variant = "hero" }: NewsletterSignupP
               name="phone"
               placeholder="Optional — for course reminders"
               disabled={pending}
-              className="mt-1 block w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-gray-400 backdrop-blur-sm focus:border-white/60 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-white/40 disabled:opacity-50"
+              className="mt-1 block w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-base text-white placeholder-gray-400 backdrop-blur-sm focus:border-white/60 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-white/40 disabled:opacity-50 sm:text-sm"
             />
           </div>
 
@@ -153,7 +153,7 @@ export default function NewsletterSignup({ variant = "hero" }: NewsletterSignupP
               rows={3}
               placeholder="Optional — questions, preferred class times, etc."
               disabled={pending}
-              className="mt-1 block w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-sm text-white placeholder-gray-400 backdrop-blur-sm focus:border-white/60 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-white/40 disabled:opacity-50"
+              className="mt-1 block w-full rounded-md border border-white/20 bg-white/10 px-3 py-2 text-base text-white placeholder-gray-400 backdrop-blur-sm focus:border-white/60 focus:bg-white/15 focus:outline-none focus:ring-1 focus:ring-white/40 disabled:opacity-50 sm:text-sm"
             />
           </div>
 

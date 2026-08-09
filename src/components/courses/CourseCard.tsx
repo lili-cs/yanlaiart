@@ -43,10 +43,16 @@ export default function CourseCard({ course }: CourseCardProps) {
             className={`rounded-full px-2 py-0.5 text-xs font-medium ${
               course.status === "open"
                 ? "bg-emerald-100 text-emerald-900"
-                : "bg-orange-100 text-orange-900"
+                : course.status === "cancelled"
+                  ? "bg-red-100 text-red-900"
+                  : "bg-orange-100 text-orange-900"
             }`}
           >
-            {course.status === "open" ? "Open Now" : "Upcoming"}
+            {course.status === "open"
+              ? "Open Now"
+              : course.status === "cancelled"
+                ? "Cancelled"
+                : "Upcoming"}
           </span>
         </div>
         <h3 className="text-lg font-semibold text-stone-900 transition-colors group-hover:text-amber-900">

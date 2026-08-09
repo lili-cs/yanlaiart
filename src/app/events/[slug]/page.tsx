@@ -29,7 +29,7 @@ export default async function EventDetailPage({ params }: Props) {
   if (!event) notFound();
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-16 sm:py-20">
+    <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-12 sm:py-16 md:py-20">
       <div className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-amber-200/40 blur-3xl" />
       <div className="pointer-events-none absolute -right-40 top-1/3 h-[28rem] w-[28rem] rounded-full bg-emerald-200/30 blur-3xl" />
 
@@ -42,7 +42,7 @@ export default async function EventDetailPage({ params }: Props) {
         </Link>
 
         <div className="overflow-hidden rounded-2xl border border-stone-300/70 bg-stone-50/95 shadow-xl shadow-stone-500/15 backdrop-blur-sm">
-          <div className="relative aspect-[2/1] overflow-hidden bg-stone-200">
+          <div className="relative aspect-[16/10] overflow-hidden bg-stone-200 sm:aspect-[2/1]">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={event.imageUrl}
@@ -52,11 +52,15 @@ export default async function EventDetailPage({ params }: Props) {
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-900/45 via-transparent to-transparent" />
           </div>
 
-          <div className="p-6 sm:p-8">
-            <h1 className="text-3xl font-bold text-gray-900">{event.title}</h1>
-            <p className="mt-1 text-lg text-stone-500">{event.titleCn}</p>
+          <div className="p-5 sm:p-6 md:p-8">
+            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+              {event.title}
+            </h1>
+            <p className="mt-1 text-base text-stone-500 sm:text-lg">
+              {event.titleCn}
+            </p>
 
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
               <div className="rounded-xl border border-stone-300/70 bg-gradient-to-br from-stone-50 to-amber-50 p-4">
                 <p className="text-sm font-medium text-stone-600">Date</p>
                 <p className="mt-1 font-semibold text-gray-900">

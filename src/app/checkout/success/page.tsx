@@ -38,16 +38,30 @@ export default async function CheckoutSuccessPage({ searchParams }: Props) {
         shortly with all the details.
       </p>
 
+      <p className="mt-3 text-sm text-gray-500">
+        A copy of your booking details has been sent to your inbox, along
+        with a calendar invite (.ics) you can open to add this session to
+        your calendar. For online sessions, the meeting link is built into
+        the invite. If you don&apos;t see the email within a few minutes,
+        please check your spam folder.
+      </p>
+
       {sessionId?.startsWith("demo_") && (
         <p className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-sm text-amber-700">
           Demo mode — Stripe is not configured. In production, this would
           process a real payment.
         </p>
       )}
+      {sessionId?.startsWith("free_") && (
+        <p className="mt-4 rounded-lg bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          This booking was free — no payment was required.
+        </p>
+      )}
 
       {sessionId && (
         <p className="mt-2 text-sm text-gray-400">
-          Reference: {sessionId.slice(0, 20)}...
+          Reference: {sessionId.slice(0, 32)}
+          {sessionId.length > 32 ? "…" : ""}
         </p>
       )}
 

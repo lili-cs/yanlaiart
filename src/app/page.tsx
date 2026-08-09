@@ -9,6 +9,8 @@ import { getFeaturedCourses } from "@/data/courses";
 import { getUpcomingEvents } from "@/data/events";
 import { Category } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 const categoryCards: {
   category: Category;
   label: string;
@@ -39,8 +41,8 @@ const categoryCards: {
   },
 ];
 
-export default function HomePage() {
-  const featuredCourses = getFeaturedCourses();
+export default async function HomePage() {
+  const featuredCourses = await getFeaturedCourses();
   const upcomingEvents = getUpcomingEvents().slice(0, 3);
 
   return (
@@ -48,7 +50,7 @@ export default function HomePage() {
       <Hero />
 
       {/* Categories */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-16 sm:py-20">
+      <section className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-12 sm:py-16 md:py-20">
         <div className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-amber-200/40 blur-3xl" />
         <div className="pointer-events-none absolute -right-40 bottom-20 h-[28rem] w-[28rem] rounded-full bg-emerald-200/30 blur-3xl" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -57,12 +59,12 @@ export default function HomePage() {
             subtitle="From pencil to clay, find the medium that speaks to you"
           />
           <BrushDivider />
-          <div className="mt-8 grid gap-6 sm:grid-cols-3">
+          <div className="mt-8 grid gap-4 sm:gap-6 md:grid-cols-3">
             {categoryCards.map((cat) => (
               <Link
                 key={cat.category}
                 href={`/courses?category=${cat.category}`}
-                className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${cat.color} p-8 text-white shadow-lg ${cat.glow} transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl`}
+                className={`group relative overflow-hidden rounded-2xl bg-gradient-to-br ${cat.color} p-6 text-white shadow-lg sm:p-8 ${cat.glow} transition-all duration-500 hover:-translate-y-1 hover:shadow-2xl`}
               >
                 {/* Painterly wash on hover */}
                 <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-white/10 blur-2xl transition-transform duration-700 group-hover:scale-150" />
@@ -82,7 +84,7 @@ export default function HomePage() {
       </section>
 
       {/* Featured Courses */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-stone-50 via-amber-50/50 to-stone-100 py-16 sm:py-20">
+      <section className="relative overflow-hidden bg-gradient-to-b from-stone-50 via-amber-50/50 to-stone-100 py-12 sm:py-16 md:py-20">
         <div className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-orange-200/30 blur-3xl" />
         <div className="pointer-events-none absolute -right-40 bottom-20 h-[28rem] w-[28rem] rounded-full bg-amber-200/40 blur-3xl" />
         <div className="pointer-events-none absolute left-1/3 top-1/2 h-72 w-72 rounded-full bg-emerald-200/25 blur-3xl" />
@@ -92,7 +94,7 @@ export default function HomePage() {
             subtitle="Our most popular courses hand-picked for you"
           />
           <BrushDivider />
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
             {featuredCourses.map((course) => (
               <CourseCard key={course.slug} course={course} />
             ))}
@@ -135,7 +137,7 @@ export default function HomePage() {
       </section>
 
       {/* Keep in Touch */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-stone-50 via-amber-50/50 to-stone-100 py-16 sm:py-20">
+      <section className="relative overflow-hidden bg-gradient-to-b from-stone-50 via-amber-50/50 to-stone-100 py-12 sm:py-16 md:py-20">
         <div className="pointer-events-none absolute -left-20 top-20 h-72 w-72 rounded-full bg-amber-200/30 blur-3xl" />
         <div className="pointer-events-none absolute -right-20 bottom-20 h-72 w-72 rounded-full bg-emerald-200/25 blur-3xl" />
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">

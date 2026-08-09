@@ -1,18 +1,30 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/courses", label: "Courses" },
   { href: "/events", label: "Events" },
+  { href: "/calendar", label: "Calendar" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];
 
 export default function Navbar() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  const [openedFor, setOpenedFor] = useState<string | null>(null);
+  const mobileOpen = openedFor === pathname;
+
+  function toggleMobile() {
+    setOpenedFor(mobileOpen ? null : pathname);
+  }
+
+  function closeMobile() {
+    setOpenedFor(null);
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md">
@@ -38,7 +50,7 @@ export default function Navbar() {
         {/* Mobile hamburger */}
         <button
           className="inline-flex items-center justify-center rounded-md p-2 text-gray-600 hover:bg-gray-100 hover:text-gray-900 md:hidden"
-          onClick={() => setMobileOpen(!mobileOpen)}
+          onClick={toggleMobile}
           aria-label="Toggle navigation menu"
         >
           {mobileOpen ? (
@@ -61,8 +73,8 @@ export default function Navbar() {
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="block rounded-md px-3 py-2 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-md px-3 py-3 text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                  onClick={closeMobile}
                 >
                   {link.label}
                 </Link>

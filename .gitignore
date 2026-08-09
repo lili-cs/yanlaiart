@@ -40,3 +40,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local persistence for admin CRUD (Vercel KV is used in production).
+/data/

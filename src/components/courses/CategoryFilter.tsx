@@ -33,7 +33,7 @@ export default function CategoryFilter() {
           key={cat.value}
           onClick={() => handleFilter(cat.value)}
           className={cn(
-            "rounded-full px-4 py-2 text-sm font-medium transition-colors",
+            "min-h-11 rounded-full px-4 py-2 text-sm font-medium transition-colors",
             current === cat.value
               ? "bg-gray-900 text-white"
               : "bg-gray-100 text-gray-600 hover:bg-gray-200"

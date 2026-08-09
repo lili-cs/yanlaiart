@@ -16,12 +16,12 @@ export default function AboutPage() {
         backgroundImage="/images/temple.jpg"
         backgroundImagePosition="center 55%"
       />
-      <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-20 sm:py-28">
+      <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-14 sm:py-20 md:py-28">
         <div className="pointer-events-none absolute -left-40 top-20 h-[28rem] w-[28rem] rounded-full bg-amber-200/40 blur-3xl" />
         <div className="pointer-events-none absolute -right-40 top-1/3 h-[28rem] w-[28rem] rounded-full bg-emerald-200/30 blur-3xl" />
         <div className="pointer-events-none absolute -left-20 bottom-20 h-96 w-96 rounded-full bg-orange-200/30 blur-3xl" />
         <div className="relative mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <article className="relative overflow-hidden rounded-3xl border border-stone-300/60 bg-stone-50/85 px-6 py-14 shadow-sm backdrop-blur-sm sm:px-14 sm:py-20">
+          <article className="relative overflow-hidden rounded-3xl border border-stone-300/60 bg-stone-50/85 px-5 py-10 shadow-sm backdrop-blur-sm sm:px-10 sm:py-16 md:px-14 md:py-20">
             {/* Ghosted landscape — the mission text sits on the artist's painting like calligraphy on silk */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -48,7 +48,7 @@ export default function AboutPage() {
                 textIndent: "2em",
                 ...({ textJustify: "inter-ideograph" } as unknown as React.CSSProperties),
               }}
-              className="relative mx-auto max-w-2xl text-justify text-[1.15rem] font-medium leading-[2.15] tracking-[0.04em] text-stone-900 sm:text-[1.35rem]"
+              className="relative mx-auto max-w-2xl text-justify text-[1.05rem] font-medium leading-[2.05] tracking-[0.04em] text-stone-900 sm:text-[1.2rem] sm:leading-[2.15] md:text-[1.35rem]"
             >
               在信息高速发展的现在，我们更关心孩子如何与自己对话。在自然之中，在安静的环境中，慢下来，与自己的感受紧密合作。绘画和手工，是最好的体验方式。走近<span className="mx-[0.15em] font-semibold tracking-[0.14em] text-amber-800">YANLAI&nbsp;ART</span>，让这个空间滋养你的身心。
             </p>
