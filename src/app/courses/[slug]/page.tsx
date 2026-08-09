@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import { getCourseBySlug } from "@/data/courses";
 import {
   formatPrice,
@@ -53,9 +54,8 @@ export default async function CourseDetailPage({ params }: Props) {
             <img
               src={course.imageUrl}
               alt={course.title}
-              className="h-full w-full object-cover"
+              className="h-full w-full object-contain"
             />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-900/45 via-transparent to-transparent" />
           </div>
 
           <div className="p-5 sm:p-6 md:p-8">
@@ -95,10 +95,12 @@ export default async function CourseDetailPage({ params }: Props) {
               {course.titleCn}
             </p>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-              <div className="rounded-xl border border-stone-300/70 bg-gradient-to-br from-stone-50 to-amber-50 p-3 sm:p-4">
-                <p className="text-sm font-medium text-rose-700/80">Price</p>
-                <p className="mt-1 text-base font-bold text-gray-900 sm:text-lg lg:text-xl">
+            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-4">
+              <div className="rounded-xl border border-stone-300/70 bg-gradient-to-br from-stone-50 to-amber-50 p-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-rose-700/80">
+                  Price
+                </p>
+                <p className="mt-1 text-xl font-bold text-gray-900">
                   {formatPrice(course.price)}
                   {course.priceUnit === "hourly" && (
                     <span className="text-base font-normal text-rose-700/70">
@@ -107,21 +109,27 @@ export default async function CourseDetailPage({ params }: Props) {
                   )}
                 </p>
               </div>
-              <div className="rounded-xl border border-stone-300/70 bg-gradient-to-br from-stone-50 to-amber-50 p-3 sm:p-4">
-                <p className="text-sm font-medium text-rose-700/80">Duration</p>
-                <p className="mt-1 text-base font-bold text-gray-900 sm:text-lg lg:text-xl">
+              <div className="rounded-xl border border-stone-300/70 bg-gradient-to-br from-stone-50 to-amber-50 p-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-rose-700/80">
+                  Duration
+                </p>
+                <p className="mt-1 text-base font-bold text-gray-900 sm:text-lg">
                   {course.duration}
                 </p>
               </div>
-              <div className="rounded-xl border border-stone-300/70 bg-gradient-to-br from-stone-50 to-amber-50 p-3 sm:p-4">
-                <p className="text-sm font-medium text-rose-700/80">Format</p>
-                <p className="mt-1 text-base font-bold text-gray-900 sm:text-lg lg:text-xl">
+              <div className="rounded-xl border border-stone-300/70 bg-gradient-to-br from-stone-50 to-amber-50 p-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-rose-700/80">
+                  Format
+                </p>
+                <p className="mt-1 text-xl font-bold text-gray-900">
                   {course.format === "online" ? "Online" : "In-Person"}
                 </p>
               </div>
-              <div className="rounded-xl border border-stone-300/70 bg-gradient-to-br from-stone-50 to-amber-50 p-3 sm:p-4">
-                <p className="text-sm font-medium text-rose-700/80">Class Size</p>
-                <p className="mt-1 text-base font-bold text-gray-900 sm:text-lg lg:text-xl">
+              <div className="rounded-xl border border-stone-300/70 bg-gradient-to-br from-stone-50 to-amber-50 p-4">
+                <p className="text-xs font-medium uppercase tracking-wider text-rose-700/80">
+                  Class Size
+                </p>
+                <p className="mt-1 text-xl font-bold text-gray-900">
                   {course.maxStudents
                     ? `Max ${course.maxStudents}`
                     : "No limit"}
@@ -134,11 +142,12 @@ export default async function CourseDetailPage({ params }: Props) {
               </div>
             </div>
 
-            <div className="mt-8 rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50/70 to-stone-50 p-5 sm:p-6">
-              <div className="flex items-center gap-2">
+            {/* Schedule — redesigned. Single source of truth for all timing info. */}
+            <div className="mt-8 overflow-hidden rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50/60 via-stone-50 to-stone-50 shadow-sm">
+              <div className="flex items-center gap-2 border-b border-amber-200/70 bg-white/60 px-5 py-3 sm:px-6">
                 <svg
-                  width="18"
-                  height="18"
+                  width="16"
+                  height="16"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
@@ -153,57 +162,114 @@ export default async function CourseDetailPage({ params }: Props) {
                   <line x1="8" y1="2" x2="8" y2="6" />
                   <line x1="3" y1="10" x2="21" y2="10" />
                 </svg>
-                <h2 className="text-base font-semibold text-amber-900 sm:text-lg">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-amber-900">
                   Schedule
                 </h2>
               </div>
-              {course.startDate && course.startTime && course.sessionCount ? (
-                <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm text-stone-800 sm:grid-cols-[max-content_1fr]">
-                  <dt className="text-stone-500">When</dt>
-                  <dd className="font-medium">
-                    {weekdayPlural(course.startDate)},{" "}
-                    {formatWeeklyRange(course.startDate, course.sessionCount)}
-                  </dd>
-                  <dt className="text-stone-500">Time</dt>
-                  <dd className="font-medium">
-                    {[course.startTime, ...(course.sessionTimes ?? [])]
-                      .map((t) => formatTimeSlot(t, course.sessionMinutes ?? 60))
-                      .join(course.sessionTimes?.length ? " / " : "")}
-                  </dd>
-                  <dt className="text-stone-500">Sessions</dt>
-                  <dd className="font-medium">
-                    {course.sessionCount} week{course.sessionCount === 1 ? "" : "s"}
-                    {course.sessionMinutes ? ` · ${course.sessionMinutes} min each` : ""}
-                    {course.sessionTimes?.length
-                      ? ` · ${course.sessionTimes.length + 1} slots per week`
-                      : ""}
-                  </dd>
-                  {course.minStudents && (
-                    <>
-                      <dt className="text-stone-500">Opens with</dt>
-                      <dd className="font-medium">
-                        {course.minStudents}+ students
-                      </dd>
-                    </>
-                  )}
-                  {course.format === "online" && (
-                    <>
-                      <dt className="text-stone-500">Where</dt>
-                      <dd className="font-medium text-teal-800">
-                        Online (meeting link on booking)
-                      </dd>
-                    </>
-                  )}
-                </dl>
-              ) : course.status === "cancelled" ? (
-                <p className="mt-3 text-sm text-stone-700">
+
+              {course.status === "cancelled" ? (
+                <div className="px-5 py-6 text-sm text-stone-700 sm:px-6">
                   This course has been cancelled.
-                </p>
+                </div>
+              ) : course.startDate &&
+                course.startTime &&
+                course.sessionCount ? (
+                <div className="flex flex-col gap-5 px-5 py-6 sm:flex-row sm:items-start sm:gap-8 sm:px-6">
+                  {/* Prominent left column: when + time */}
+                  <div className="sm:min-w-[10rem]">
+                    <p className="text-2xl font-bold text-stone-900 sm:text-3xl">
+                      {weekdayPlural(course.startDate)}
+                    </p>
+                    <p className="mt-1 text-base font-medium text-amber-900 tabular-nums sm:text-lg">
+                      {[course.startTime, ...(course.sessionTimes ?? [])]
+                        .map((t) =>
+                          formatTimeSlot(t, course.sessionMinutes ?? 60)
+                        )
+                        .join(course.sessionTimes?.length ? " · " : "")}
+                    </p>
+                  </div>
+
+                  {/* Right column: everything else */}
+                  <div className="flex-1 space-y-1.5 text-sm text-stone-700 sm:border-l sm:border-amber-200/70 sm:pl-8">
+                    <p>
+                      <span className="font-semibold text-stone-900">
+                        {formatWeeklyRange(
+                          course.startDate,
+                          course.sessionCount
+                        )}
+                      </span>
+                    </p>
+                    <p>
+                      {course.sessionCount} week
+                      {course.sessionCount === 1 ? "" : "s"} ·{" "}
+                      {course.sessionMinutes ?? 60} min per class
+                      {course.sessionTimes?.length
+                        ? ` · ${course.sessionTimes.length + 1} slots each ${weekdayPlural(course.startDate).slice(0, -1)}`
+                        : ""}
+                    </p>
+                    {course.minStudents && (
+                      <p className="text-stone-600">
+                        Opens with {course.minStudents}+ students enrolled
+                      </p>
+                    )}
+                    {course.format === "online" ? (
+                      <p className="pt-1 text-teal-800">
+                        Online · meeting link arrives with your booking
+                      </p>
+                    ) : (
+                      <p className="pt-1 text-stone-600">
+                        In-person at the studio
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : course.status === "open" ? (
+                // Open + no fixed schedule → book on demand (free trial,
+                // hourly ceramics).
+                <div className="flex flex-col gap-5 px-5 py-6 sm:flex-row sm:items-start sm:gap-8 sm:px-6">
+                  <div className="sm:min-w-[10rem]">
+                    <p className="text-2xl font-bold text-stone-900 sm:text-3xl">
+                      Book any time
+                    </p>
+                    <p className="mt-1 text-sm text-amber-900">
+                      Pick a date &amp; time when you book.
+                    </p>
+                  </div>
+                  <div className="flex-1 space-y-1.5 text-sm text-stone-700 sm:border-l sm:border-amber-200/70 sm:pl-8">
+                    <p>
+                      <span className="font-semibold text-stone-900">
+                        {course.priceUnit === "hourly"
+                          ? "Book by the hour"
+                          : `${course.sessionMinutes ?? 60}-min session`}
+                      </span>
+                    </p>
+                    {course.minStudents && (
+                      <p className="text-stone-600">
+                        Runs with {course.minStudents}+ students
+                      </p>
+                    )}
+                    {course.format === "online" ? (
+                      <p className="pt-1 text-teal-800">
+                        Online · meeting link arrives with your booking
+                      </p>
+                    ) : (
+                      <p className="pt-1 text-stone-600">
+                        In-person at the studio
+                      </p>
+                    )}
+                  </div>
+                </div>
               ) : (
-                <p className="mt-3 text-sm text-stone-700">
-                  Schedule to be announced. Follow us or subscribe below to be
-                  notified when enrollment opens.
-                </p>
+                // Upcoming, not yet scheduled.
+                <div className="px-5 py-6 sm:px-6">
+                  <p className="text-xl font-semibold text-stone-900 sm:text-2xl">
+                    Schedule to be announced
+                  </p>
+                  <p className="mt-1 text-sm text-stone-600">
+                    Follow us or subscribe below to be notified when this
+                    course opens for enrollment.
+                  </p>
+                </div>
               )}
             </div>
 
@@ -237,18 +303,20 @@ export default async function CourseDetailPage({ params }: Props) {
                   )}
                 </div>
               )}
-              <BookingButton
-                itemType="course"
-                itemSlug={course.slug}
-                disabled={course.status !== "open"}
-                disabledMessage={
-                  course.status === "cancelled"
-                    ? "This course has been cancelled. Contact us if you have any questions."
-                    : course.status !== "open"
-                      ? "This course isn't open for booking yet. Follow us or check back soon for enrollment."
-                      : undefined
-                }
-              />
+              <Suspense fallback={null}>
+                <BookingButton
+                  itemType="course"
+                  itemSlug={course.slug}
+                  disabled={course.status !== "open"}
+                  disabledMessage={
+                    course.status === "cancelled"
+                      ? "This course has been cancelled. Contact us if you have any questions."
+                      : course.status !== "open"
+                        ? "This course isn't open for booking yet. Follow us or check back soon for enrollment."
+                        : undefined
+                  }
+                />
+              </Suspense>
             </div>
           </div>
         </div>

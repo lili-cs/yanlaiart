@@ -19,10 +19,11 @@ function SubmitButton() {
   );
 }
 
-export default function LoginForm() {
+export default function LoginForm({ nextUrl }: { nextUrl?: string }) {
   const [state, action] = useActionState(loginAction, initial);
   return (
     <form action={action} className="space-y-4 rounded-2xl border border-stone-200 bg-white p-6 shadow-sm">
+      <input type="hidden" name="next" value={nextUrl ?? "/admin"} />
       <div>
         <label htmlFor="username" className="block text-sm font-medium text-stone-700">
           Username

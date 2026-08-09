@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import { Suspense } from "react";
 import { getAllEvents, getEventBySlug } from "@/data/events";
 import { formatDate } from "@/lib/utils";
 import BookingButton from "@/components/courses/BookingButton";
@@ -93,11 +94,13 @@ export default async function EventDetailPage({ params }: Props) {
             </p>
 
             <div className="mt-8 border-t border-stone-300/70 pt-8">
-              <BookingButton
-                itemType="event"
-                itemSlug={event.slug}
-                label="Register Now"
-              />
+              <Suspense fallback={null}>
+                <BookingButton
+                  itemType="event"
+                  itemSlug={event.slug}
+                  label="Register Now"
+                />
+              </Suspense>
             </div>
           </div>
         </div>

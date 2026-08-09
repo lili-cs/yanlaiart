@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
+import { trapFocus } from "@/lib/utils";
 
 interface BookingButtonProps {
   itemType: "course" | "event";
@@ -25,6 +26,8 @@ export default function BookingButton({
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
   const searchParams = useSearchParams();
   const bookParam = searchParams.get("book");
 
@@ -44,10 +47,19 @@ export default function BookingButton({
     window.addEventListener("keydown", onKey);
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    // Capture the trigger at effect-mount time so cleanup uses the same node.
+    const triggerAtOpen = triggerRef.current;
     firstFieldRef.current?.focus();
+    const untrap = modalRef.current ? trapFocus(modalRef.current) : () => {};
     return () => {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
+      untrap();
+      // Return focus to whatever opened the modal — for the button click
+      // path it's the trigger, for the ?book=1 path it may be the URL bar
+      // (no meaningful previouslyFocused), in which case we do nothing.
+      (triggerAtOpen ?? previouslyFocused)?.focus();
     };
   }, [open]);
 
@@ -69,6 +81,9 @@ export default function BookingButton({
     );
   }
 
+  // Recompute today's date on every render — including on modal open —
+  // so a modal held open past midnight refreshes the "no past dates" rule
+  // as soon as any state change re-renders the component.
   const today = new Date().toISOString().slice(0, 10);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -116,6 +131,7 @@ export default function BookingButton({
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => {
           setStatus("idle");
@@ -138,6 +154,7 @@ export default function BookingButton({
           }}
         >
           <div
+            ref={modalRef}
             className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-stone-300/70 bg-stone-50 shadow-2xl max-h-[calc(100dvh-2rem)]"
           >
             <button

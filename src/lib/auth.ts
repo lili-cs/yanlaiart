@@ -32,13 +32,24 @@ export function verifyPassword(
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
 export const SESSION_COOKIE_NAME = "yla_admin_session";
 
+let devSecretWarned = false;
+
 function getSessionSecret(): string {
   const secret = process.env.SESSION_SECRET;
   if (!secret || secret.length < 16) {
-    // Dev fallback — logged so it's obvious in the console.
-    console.warn(
-      "SESSION_SECRET is not set (or too short). Sessions will not survive restarts. Set SESSION_SECRET in .env.local."
-    );
+    if (process.env.NODE_ENV === "production") {
+      // Refuse to sign/verify cookies with a known constant in production —
+      // anyone with the source could forge admin sessions.
+      throw new Error(
+        "SESSION_SECRET is not set (or is shorter than 16 chars). Set a strong random value in the Vercel dashboard: openssl rand -base64 32"
+      );
+    }
+    if (!devSecretWarned) {
+      devSecretWarned = true;
+      console.warn(
+        "SESSION_SECRET is not set (or too short). Sessions will not survive restarts. Set SESSION_SECRET in .env.local."
+      );
+    }
     return "insecure-dev-secret-set-SESSION_SECRET-in-env";
   }
   return secret;

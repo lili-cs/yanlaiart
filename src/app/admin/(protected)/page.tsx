@@ -19,6 +19,7 @@ interface Props {
     undo?: string;
     restored?: string;
     purged?: string;
+    purgeBlocked?: string;
   }>;
 }
 
@@ -44,6 +45,7 @@ export default async function AdminDashboard({ searchParams }: Props) {
   const undoSlug = params.undo;
   const restoredSlug = params.restored;
   const justPurged = params.purged === "1";
+  const purgeBlockedSlug = params.purgeBlocked;
 
   // Look up the title of the just-deleted course for the banner.
   const undoCourse = undoSlug
@@ -94,6 +96,21 @@ export default async function AdminDashboard({ searchParams }: Props) {
       {justPurged && (
         <div className="mb-4 rounded-lg border border-stone-300 bg-stone-100 px-4 py-3 text-sm text-stone-700">
           Course permanently deleted.
+        </div>
+      )}
+
+      {purgeBlockedSlug && (
+        <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          Can&apos;t permanently delete <strong>{purgeBlockedSlug}</strong> —
+          it has bookings on file. Restore the course to keep it visible, or
+          view the bookings first (
+          <Link
+            href={`/admin/courses/${purgeBlockedSlug}/bookings`}
+            className="underline"
+          >
+            open bookings
+          </Link>
+          ).
         </div>
       )}
 

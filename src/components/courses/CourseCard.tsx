@@ -22,9 +22,8 @@ export default function CourseCard({ course }: CourseCardProps) {
         <img
           src={course.imageUrl}
           alt={course.title}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+          className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
         />
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-stone-900/25 via-transparent to-transparent" />
       </div>
       <div className="relative flex flex-1 flex-col p-5">
         <div className="mb-2 flex flex-wrap items-center gap-2">
@@ -62,14 +61,16 @@ export default function CourseCard({ course }: CourseCardProps) {
         <p className="mt-2 flex-1 text-sm text-stone-600 line-clamp-2">
           {course.description}
         </p>
-        <div className="mt-4 flex items-center justify-between border-t border-stone-200 pt-4">
-          <span className="text-lg font-bold text-stone-900">
-            {formatPrice(course.price)}
+        <div className="mt-4 border-t border-stone-200 pt-4">
+          <div className="flex items-baseline gap-1">
+            <span className="text-xl font-bold text-stone-900">
+              {formatPrice(course.price)}
+            </span>
             {course.priceUnit === "hourly" && (
               <span className="text-sm font-normal text-stone-500">/hour</span>
             )}
-          </span>
-          <span className="text-sm text-stone-600">{course.duration}</span>
+          </div>
+          <p className="mt-1 text-xs text-stone-500">{course.duration}</p>
         </div>
       </div>
     </Link>

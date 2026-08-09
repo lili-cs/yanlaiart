@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import crypto from "node:crypto";
 import { getStripe } from "@/lib/stripe";
 import { getCourseBySlug } from "@/data/courses";
 import { getEventBySlug } from "@/data/events";
@@ -148,7 +149,9 @@ export async function POST(request: Request) {
   // Free or demo-mode path: skip Stripe, send emails directly, then redirect to success.
   if (priceInCents === 0 || !stripeReady) {
     const referencePrefix = priceInCents === 0 ? "free" : "demo";
-    const referenceId = `${referencePrefix}_${itemSlug}_${Date.now()}`;
+    // Random suffix eliminates same-millisecond collision if two users
+    // submit the same free/demo course concurrently.
+    const referenceId = `${referencePrefix}_${itemSlug}_${crypto.randomUUID()}`;
 
     const emailPayload: BookingEmailPayload = {
       itemType,

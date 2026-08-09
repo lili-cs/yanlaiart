@@ -12,7 +12,12 @@ export default async function ProtectedLayout({
 }) {
   const c = await cookies();
   const session = verifySession(c.get(SESSION_COOKIE_NAME)?.value);
-  if (!session) redirect("/admin/login");
+  if (!session) {
+    // Middleware already redirected unauthenticated requests with a ?next=
+    // parameter based on the actual pathname; if we somehow got here with
+    // a stale/invalid cookie, send them back through the same funnel.
+    redirect("/admin/login");
+  }
 
   const isServerless = Boolean(process.env.VERCEL) || Boolean(process.env.NETLIFY);
   const storageWarning =

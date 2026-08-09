@@ -1,8 +1,8 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useTransition } from "react";
 import { useFormStatus } from "react-dom";
-import type { NotifyState } from "../../../actions";
+import { revertStatusAction, type NotifyState } from "../../../actions";
 
 const initial: NotifyState = {};
 
@@ -10,6 +10,7 @@ interface Props {
   variant: "confirm" | "cancel";
   action: (prev: NotifyState, fd: FormData) => Promise<NotifyState>;
   recipientCount: number;
+  slug: string;
 }
 
 const copy = {
@@ -70,9 +71,17 @@ export default function NotifyComposer({
   variant,
   action,
   recipientCount,
+  slug,
 }: Props) {
   const [state, formAction] = useActionState(action, initial);
+  const [reverting, startRevert] = useTransition();
   const c = copy[variant];
+
+  function handleRevert(prev: "upcoming" | "open") {
+    startRevert(async () => {
+      await revertStatusAction(slug, prev);
+    });
+  }
 
   return (
     <div className={`rounded-2xl border p-5 shadow-sm sm:p-6 ${c.accent}`}>
@@ -103,10 +112,39 @@ export default function NotifyComposer({
           </p>
         )}
         {state.ok && (
-          <p role="status" className="rounded-md border border-emerald-300 bg-emerald-100 px-3 py-2 text-sm text-emerald-900">
-            Sent to {state.sent} recipient{state.sent === 1 ? "" : "s"}
-            {state.skipped ? ` (${state.skipped} skipped due to errors)` : ""}.
-          </p>
+          <div
+            role="status"
+            className="rounded-md border border-emerald-300 bg-emerald-100 px-3 py-2 text-sm text-emerald-900"
+          >
+            <p>
+              Sent to {state.sent} recipient{state.sent === 1 ? "" : "s"}
+              {state.skipped ? ` (${state.skipped} skipped due to errors)` : ""}.
+            </p>
+            {variant === "cancel" &&
+              state.previousStatus &&
+              state.previousStatus !== "cancelled" && (
+                <div className="mt-2 flex flex-col gap-1 border-t border-emerald-300/60 pt-2 text-xs text-emerald-800 sm:flex-row sm:items-center sm:justify-between">
+                  <span>
+                    Emails were sent — the status is now Cancelled. Undo only
+                    reverts the status; the emails have already gone out.
+                  </span>
+                  <button
+                    type="button"
+                    disabled={reverting}
+                    onClick={() =>
+                      handleRevert(
+                        state.previousStatus as "upcoming" | "open"
+                      )
+                    }
+                    className="inline-flex min-h-9 items-center justify-center self-start rounded-md border border-emerald-400 bg-white px-3 py-1 text-xs font-semibold text-emerald-900 hover:bg-emerald-50 disabled:opacity-60 sm:self-auto"
+                  >
+                    {reverting
+                      ? "Reverting…"
+                      : `Undo status → ${state.previousStatus}`}
+                  </button>
+                </div>
+              )}
+          </div>
         )}
 
         <div className="flex items-center justify-between">

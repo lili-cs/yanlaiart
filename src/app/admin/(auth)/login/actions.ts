@@ -14,12 +14,22 @@ export interface LoginState {
   error?: string;
 }
 
+function safeNext(raw: string | undefined): string {
+  if (!raw) return "/admin";
+  if (!raw.startsWith("/") || raw.startsWith("//") || raw.includes("\\")) {
+    return "/admin";
+  }
+  if (!raw.startsWith("/admin")) return "/admin";
+  return raw;
+}
+
 export async function loginAction(
   _prev: LoginState,
   formData: FormData
 ): Promise<LoginState> {
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const next = safeNext(String(formData.get("next") ?? "") || undefined);
 
   if (!username || !password) {
     return { error: "Please enter your username and password." };
@@ -43,5 +53,5 @@ export async function loginAction(
     maxAge: SESSION_MAX_AGE_SECONDS,
   });
 
-  redirect("/admin");
+  redirect(next);
 }

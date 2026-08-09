@@ -58,6 +58,7 @@ export default function CourseForm({ mode, course, action }: Props) {
   const [sessionTimesRaw, setSessionTimesRaw] = useState<string>(
     course?.sessionTimes?.join(", ") ?? ""
   );
+  const [duration, setDuration] = useState<string>(course?.duration ?? "");
 
   const previewDuration = formatCourseDuration({
     priceUnit,
@@ -72,6 +73,12 @@ export default function CourseForm({ mode, course, action }: Props) {
       : undefined,
     startDate: startDate || undefined,
   });
+  // If the admin typed something that doesn't match what the schedule would
+  // derive, flag it — they may have intentionally overridden, or they may
+  // have forgotten to update the label after editing dates.
+  const durationTrimmed = duration.trim();
+  const durationMismatch =
+    durationTrimmed.length > 0 && durationTrimmed !== previewDuration;
 
   const priceDollars = course ? (course.price / 100).toFixed(2) : "";
 
@@ -216,6 +223,42 @@ export default function CourseForm({ mode, course, action }: Props) {
             </label>
             <input id="minStudents" name="minStudents" type="number" min="1" defaultValue={course?.minStudents ?? ""} className={inputCls} />
           </div>
+          <div className="sm:col-span-2">
+            <label htmlFor="duration" className={labelCls}>
+              Duration label <span className="text-stone-400">(what shows on the course card &amp; page)</span>
+            </label>
+            <input
+              id="duration"
+              name="duration"
+              type="text"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              placeholder={previewDuration || "Leave blank to auto-generate from schedule"}
+              className={inputCls}
+            />
+            <div className="mt-1 flex flex-col gap-1 text-xs">
+              {durationTrimmed.length === 0 ? (
+                <p className="text-stone-500">
+                  Empty → auto-generates as{" "}
+                  <span className="font-medium text-stone-700">
+                    {previewDuration || "(nothing to derive from schedule)"}
+                  </span>
+                </p>
+              ) : durationMismatch ? (
+                <p className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-amber-900">
+                  <span className="font-semibold">Doesn&apos;t match your schedule.</span>{" "}
+                  Based on the fields below, this course would auto-read as{" "}
+                  <span className="font-medium">{previewDuration}</span>. Your
+                  custom text will be shown instead — clear the field to
+                  revert to the auto value.
+                </p>
+              ) : (
+                <p className="text-emerald-700">
+                  ✓ Matches the schedule below.
+                </p>
+              )}
+            </div>
+          </div>
           {format === "online" && (
             <>
               <div className="sm:col-span-2">
@@ -333,15 +376,15 @@ export default function CourseForm({ mode, course, action }: Props) {
 
         <div className="mt-5 rounded-lg border border-stone-200 bg-stone-50 px-4 py-3">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">
-            Duration label (auto-generated)
+            Auto-derived from these schedule fields
           </p>
           <p className="mt-1 text-sm font-medium text-stone-800">
             {previewDuration}
           </p>
           <p className="mt-1 text-xs text-stone-500">
-            Shown on the course card, course detail page, and booking emails —
-            derived from the fields above so it never drifts. To change the
-            wording, adjust the fields.
+            This is what the Duration label defaults to when left blank. Set a
+            custom value in the &ldquo;Duration label&rdquo; field above to
+            override it (a warning will show if the two disagree).
           </p>
         </div>
       </section>

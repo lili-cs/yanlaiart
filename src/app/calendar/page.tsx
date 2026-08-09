@@ -36,7 +36,7 @@ export default async function CalendarPage() {
           {openHourly.length > 0 && (
             <div className="mt-10 rounded-2xl border border-emerald-200/70 bg-emerald-50/60 p-5 shadow-sm sm:p-6">
               <h2 className="text-base font-semibold text-emerald-900 sm:text-lg">
-                Always available: hourly studio bookings
+                Book on demand
               </h2>
               <p className="mt-1 text-sm text-emerald-800/90">
                 These open sessions don&apos;t follow a fixed schedule — pick

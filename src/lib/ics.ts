@@ -77,14 +77,25 @@ function escapeIcsText(s: string): string {
     .replace(/\r?\n/g, "\\n");
 }
 
-// RFC 5545 §3.1: fold lines at 75 octets with CRLF + single space.
+// RFC 5545 §3.1: fold lines at 75 octets (bytes) with CRLF + single space.
+// UTF-8 CJK characters are 3 bytes each, so a naive char-count fold produces
+// lines several times over the limit that some older clients reject.
 function foldLine(line: string): string {
-  if (line.length <= 75) return line;
+  const bytes = Buffer.from(line, "utf8");
+  if (bytes.length <= 75) return line;
   const parts: string[] = [];
-  let i = 0;
-  while (i < line.length) {
-    parts.push(line.slice(i, i === 0 ? 75 : i + 74));
-    i += i === 0 ? 75 : 74;
+  // First segment: 75 bytes. Continuation segments: prefixed by " ", so 74
+  // bytes of content each.
+  let offset = 0;
+  let limit = 75;
+  while (offset < bytes.length) {
+    // Don't split in the middle of a multi-byte UTF-8 sequence: rewind until
+    // the next byte would be a valid UTF-8 leading byte.
+    let end = Math.min(offset + limit, bytes.length);
+    while (end < bytes.length && (bytes[end] & 0xc0) === 0x80) end--;
+    parts.push(bytes.subarray(offset, end).toString("utf8"));
+    offset = end;
+    limit = 74;
   }
   return parts.join(`${CRLF} `);
 }
@@ -111,7 +122,9 @@ export function buildBookingIcs(input: BookingIcsInput): string {
     lines.push(`LOCATION:${escapeIcsText(input.location)}`);
   }
   if (input.url) {
-    lines.push(`URL:${input.url}`);
+    // RFC 5545 says URI values are not text — no comma/semicolon escaping.
+    // But CR/LF still need stripping (defense against malicious input).
+    lines.push(`URL:${input.url.replace(/[\r\n]+/g, "")}`);
   }
   lines.push("END:VEVENT", "END:VCALENDAR");
 

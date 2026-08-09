@@ -1,10 +1,9 @@
 import { Course } from "@/types";
 
 /**
- * Initial course seed data. Copied into the persistent store (Neon in
- * production, JSON file locally) on first read. Admin edits take precedence
- * once seeded. Regenerated from Neon; do not hand-edit unless you also
- * update Neon.
+ * Initial course seed data. Copied into the persistent store on first read.
+ * Admin edits take precedence once seeded. Regenerated from Neon; do not
+ * hand-edit unless you also update Neon.
  */
 export const COURSE_SEED: Course[] = [
   {
@@ -36,7 +35,7 @@ export const COURSE_SEED: Course[] = [
     "category": "drawing",
     "duration": "8 weekly classes · 60 min each",
     "featured": true,
-    "imageUrl": "https://placehold.co/800x500/e2e8f0/475569?text=Fundamentals+of+Drawing",
+    "imageUrl": "/images/fundamentals-of-drawing.jpg",
     "priceUnit": "total",
     "startDate": "2026-08-24",
     "startTime": "15:30",
@@ -78,12 +77,13 @@ export const COURSE_SEED: Course[] = [
     "status": "upcoming",
     "titleCn": "户外写生",
     "category": "drawing",
-    "duration": "8 classes (60 min each)",
+    "duration": "1 hour · single class",
     "featured": false,
-    "imageUrl": "https://placehold.co/800x500/e2e8f0/475569?text=Outdoor+Sketching",
+    "imageUrl": "/images/outdoor-sketching.jpg",
     "priceUnit": "total",
     "description": "Sketch landscapes, gardens, and streetscapes on location with pen, ink, and watercolor.",
     "maxStudents": 15,
+    "sessionCount": 8,
     "sessionMinutes": 60,
     "longDescription": "Take your sketchbook into the open air and learn to capture the world around you from direct observation. This course moves through a variety of outdoor settings — parks, gardens, waterfronts, and streetscapes — teaching you how to work quickly with pen, ink, and watercolor. You will develop skills in landscape composition, atmospheric perspective, drawing trees and foliage, capturing changing light, and adding lively washes on location. By the end you will have the confidence and toolkit to sketch anywhere."
   },
@@ -98,7 +98,7 @@ export const COURSE_SEED: Course[] = [
     "category": "painting",
     "duration": "8 weekly classes · 60 min each",
     "featured": true,
-    "imageUrl": "https://placehold.co/800x500/fef3c7/92400e?text=Watercolor+Landscapes",
+    "imageUrl": "/images/watercolor.jpg",
     "priceUnit": "total",
     "startDate": "2026-08-25",
     "startTime": "13:30",
@@ -124,6 +124,7 @@ export const COURSE_SEED: Course[] = [
     "priceUnit": "total",
     "description": "Express yourself through bold colors, textures, and abstract composition in acrylics.",
     "maxStudents": 12,
+    "sessionCount": 8,
     "sessionMinutes": 60,
     "longDescription": "Unleash your creativity with acrylic paints in this abstract art course. Explore color theory, texture building with palette knives and mixed media, gestural mark-making, and compositional balance. You will study abstract masters for inspiration while developing your own unique visual language. No prior painting experience is needed — just an open mind and willingness to experiment."
   },
@@ -153,7 +154,7 @@ export const COURSE_SEED: Course[] = [
   {
     "slug": "intro-to-pottery",
     "level": "Beginner",
-    "price": 5000,
+    "price": 5900,
     "title": "Introduction to Pottery",
     "format": "in-person",
     "status": "open",
@@ -161,7 +162,7 @@ export const COURSE_SEED: Course[] = [
     "category": "ceramic",
     "duration": "Sundays · 1 PM / 3 PM / 5 PM (60 min each)",
     "featured": true,
-    "imageUrl": "https://placehold.co/800x500/d1fae5/065f46?text=Intro+to+Pottery",
+    "imageUrl": "/images/intro-to-pottery.jpg",
     "priceUnit": "hourly",
     "startDate": "2026-08-23",
     "startTime": "13:00",
@@ -179,7 +180,7 @@ export const COURSE_SEED: Course[] = [
   {
     "slug": "wheel-throwing-intensive",
     "level": "Intermediate",
-    "price": 5000,
+    "price": 5900,
     "title": "Wheel Throwing Intensive",
     "format": "in-person",
     "status": "upcoming",
@@ -196,7 +197,7 @@ export const COURSE_SEED: Course[] = [
   {
     "slug": "ceramic-sculpture",
     "level": "Advanced",
-    "price": 5000,
+    "price": 5900,
     "title": "Ceramic Sculpture",
     "format": "in-person",
     "status": "open",
@@ -205,7 +206,7 @@ export const COURSE_SEED: Course[] = [
     "duration": "Weekly classes · 60 min each",
     "featured": false,
     "imageUrl": "https://placehold.co/800x500/d1fae5/065f46?text=Ceramic+Sculpture",
-    "priceUnit": "total",
+    "priceUnit": "hourly",
     "startDate": "2026-09-16",
     "startTime": "13:00",
     "description": "For adults. Push the boundaries of clay beyond functional ware into the realm of sculpture. Explore figurative and abstract forms, armature building, hollow construction, and surface treatments.",

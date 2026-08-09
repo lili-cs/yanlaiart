@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { trapFocus } from "@/lib/utils";
 
 interface Props {
   courseTitle: string;
@@ -22,6 +23,8 @@ export default function MeetingDetailsButton({
   variant = "icon",
 }: Props) {
   const [open, setOpen] = useState(false);
+  const modalRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -31,15 +34,23 @@ export default function MeetingDetailsButton({
     window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const triggerAtOpen = triggerRef.current;
+    const untrap = modalRef.current ? trapFocus(modalRef.current) : () => {};
+    // Move focus into the modal so screen readers announce the dialog.
+    modalRef.current?.querySelector<HTMLElement>("a, button")?.focus();
     return () => {
       window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
+      untrap();
+      (triggerAtOpen ?? previouslyFocused)?.focus();
     };
   }, [open]);
 
   const trigger =
     variant === "icon" ? (
       <button
+        ref={triggerRef}
         type="button"
         onClick={(e) => {
           e.preventDefault();
@@ -54,6 +65,7 @@ export default function MeetingDetailsButton({
       </button>
     ) : (
       <button
+        ref={triggerRef}
         type="button"
         onClick={(e) => {
           e.preventDefault();
@@ -83,6 +95,7 @@ export default function MeetingDetailsButton({
             }}
           >
             <div
+              ref={modalRef}
               className="relative flex max-h-[calc(100vh-2rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-stone-300/70 bg-white shadow-2xl max-h-[calc(100dvh-2rem)]"
             >
               <button

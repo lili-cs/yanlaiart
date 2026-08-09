@@ -106,11 +106,13 @@ export default async function CourseBookingsPage({ params }: Props) {
           variant="confirm"
           action={boundConfirm}
           recipientCount={paidCount}
+          slug={slug}
         />
         <NotifyComposer
           variant="cancel"
           action={boundCancel}
           recipientCount={paidCount}
+          slug={slug}
         />
       </div>
 

@@ -125,6 +125,7 @@ export async function POST(request: NextRequest) {
           notes: notes || undefined,
           isOnline,
           meetingUrl,
+          meetingInstructions,
           location,
           amountLabel: amountLabel || "Paid",
           createdAt: Date.now(),

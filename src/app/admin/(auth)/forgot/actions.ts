@@ -1,7 +1,10 @@
 "use server";
 
-import { getAdmin, saveAdmin } from "@/lib/admin-store";
+import { mutateAdmin } from "@/lib/admin-store";
 import { generateResetToken, RESET_TOKEN_TTL_MS } from "@/lib/auth";
+
+/** Minimum time between two forgot-password requests. */
+const RESET_THROTTLE_MS = 5 * 60 * 1000;
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
@@ -85,16 +88,39 @@ export async function forgotAction(
   // has nothing to spoof.
   const ownerEmail = "yichenhot@icloud.com";
 
+  const now = Date.now();
   const token = generateResetToken();
-  await saveAdmin({
-    reset: { token, expiresAt: Date.now() + RESET_TOKEN_TTL_MS },
+
+  // Atomically check throttle and issue a new token. If the last request was
+  // within the throttle window, keep the previous reset entry unchanged (so
+  // any live token stays valid) and short-circuit.
+  let throttled = false;
+  const admin = await mutateAdmin((current) => {
+    const last = current.lastResetRequestedAt ?? 0;
+    if (now - last < RESET_THROTTLE_MS) {
+      throttled = true;
+      return current;
+    }
+    return {
+      ...current,
+      reset: { token, expiresAt: now + RESET_TOKEN_TTL_MS },
+      lastResetRequestedAt: now,
+    };
   });
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
-  const resetUrl = `${baseUrl}/admin/reset/${token}`;
+  if (throttled) {
+    // Reply generically so callers can't tell whether we sent an email —
+    // prevents them from learning the throttle interval.
+    return { ok: true };
+  }
 
-  // Also log to server console so local dev works without email configured.
-  console.log("[admin] Password reset URL (local dev fallback):", resetUrl);
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+  const resetUrl = `${baseUrl}/admin/reset/${admin.reset!.token}`;
+
+  // In dev, log the URL so you can complete a reset locally without email.
+  if (process.env.NODE_ENV !== "production") {
+    console.log("[admin] Password reset URL (dev only):", resetUrl);
+  }
 
   try {
     await sendResetEmail(ownerEmail, resetUrl);
@@ -102,9 +128,6 @@ export async function forgotAction(
     console.error(err);
     // Don't leak whether email delivery succeeded — reply generically.
   }
-
-  // Refresh admin credentials from source-of-truth (no-op read to ensure seeded)
-  await getAdmin();
 
   return { ok: true };
 }

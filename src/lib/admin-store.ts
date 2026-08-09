@@ -1,4 +1,4 @@
-import { readStore, writeStore } from "./store";
+import { readStore, updateStore } from "./store";
 import { hashPassword } from "./auth";
 
 const KEY = "admin";
@@ -13,6 +13,8 @@ export interface AdminRecord {
   passwordSalt: string;
   passwordHash: string;
   reset?: ResetTokenRecord;
+  /** Unix ms of the last forgot-password request (throttle). */
+  lastResetRequestedAt?: number;
 }
 
 function defaultUsername(): string {
@@ -23,34 +25,53 @@ function defaultInitialPassword(): string {
   return process.env.ADMIN_INITIAL_PASSWORD ?? "yichen";
 }
 
-async function seed(): Promise<AdminRecord> {
+function seedRecord(): AdminRecord {
   const { salt, hash } = hashPassword(defaultInitialPassword());
-  const record: AdminRecord = {
+  return {
     username: defaultUsername(),
     passwordSalt: salt,
     passwordHash: hash,
   };
-  await writeStore(KEY, record);
-  return record;
 }
 
 export async function getAdmin(): Promise<AdminRecord> {
   const existing = await readStore<AdminRecord>(KEY);
-  if (existing) return existing;
-  return seed();
+  if (existing && typeof existing === "object" && existing.username) {
+    return existing;
+  }
+  return updateStore<AdminRecord>(KEY, (current) => {
+    if (current && typeof current === "object" && current.username) {
+      return current;
+    }
+    return seedRecord();
+  });
+}
+
+/**
+ * Atomically mutate the admin record. Prefer this over saveAdmin() for any
+ * change that depends on the current value (e.g. rate-limit checks).
+ */
+export async function mutateAdmin(
+  mutator: (current: AdminRecord) => AdminRecord | Promise<AdminRecord>
+): Promise<AdminRecord> {
+  return updateStore<AdminRecord>(KEY, async (current) => {
+    const base =
+      current && typeof current === "object" && current.username
+        ? current
+        : seedRecord();
+    return mutator(base);
+  });
 }
 
 export async function saveAdmin(patch: Partial<AdminRecord>): Promise<AdminRecord> {
-  const current = await getAdmin();
-  const next: AdminRecord = { ...current, ...patch };
-  await writeStore(KEY, next);
-  return next;
+  return mutateAdmin((current) => ({ ...current, ...patch }));
 }
 
 export async function clearResetToken(): Promise<void> {
-  const current = await getAdmin();
-  if (!current.reset) return;
-  const next = { ...current };
-  delete next.reset;
-  await writeStore(KEY, next);
+  await mutateAdmin((current) => {
+    if (!current.reset) return current;
+    const next = { ...current };
+    delete next.reset;
+    return next;
+  });
 }

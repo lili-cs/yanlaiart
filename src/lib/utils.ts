@@ -96,14 +96,47 @@ export function formatCourseDuration(course: {
   if (isScheduled) {
     const weeks = course.sessionCount!;
     const weekLabel =
-      weeks === 1 ? "Single class" : `${weeks} weekly classes`;
+      weeks === 1 ? "One-time session" : `${weeks} weekly classes`;
     const slotCount = 1 + (course.sessionTimes?.length ?? 0);
     const slotLabel = slotCount > 1 ? ` · ${slotCount} slots per week` : "";
     return `${weekLabel} · ${perLabel} each${slotLabel}`;
   }
 
   if (course.priceUnit === "hourly") return "Book by the hour";
-  return `${perLabel} · single class`;
+  // Upcoming courses without a schedule aren't one-time — they just don't
+  // have dates set yet. Say so explicitly.
+  if (course.status === "upcoming") return "Schedule to be announced";
+  return `${perLabel} · one-time session`;
+}
+
+/**
+ * Wire a simple Tab-key focus trap onto a container element. Returns a
+ * cleanup function. Meant to be called inside a useEffect for open modals.
+ */
+export function trapFocus(container: HTMLElement): () => void {
+  const selector =
+    'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+  function handler(e: KeyboardEvent) {
+    if (e.key !== "Tab") return;
+    const focusables = Array.from(
+      container.querySelectorAll<HTMLElement>(selector)
+    ).filter((el) => !el.hasAttribute("aria-hidden"));
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement as HTMLElement | null;
+    if (e.shiftKey && (active === first || !container.contains(active))) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && active === last) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+
+  container.addEventListener("keydown", handler);
+  return () => container.removeEventListener("keydown", handler);
 }
 
 export function formatWeeklyRange(startIso: string, sessionCount: number): string {

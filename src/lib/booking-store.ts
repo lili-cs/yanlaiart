@@ -1,4 +1,4 @@
-import { readStore, writeStore } from "./store";
+import { readStore, updateStore } from "./store";
 
 export interface StoredBooking {
   id: string;
@@ -29,6 +29,19 @@ function withDefaults(b: StoredBooking): StoredBooking {
   return { ...b, paymentStatus: b.source === "stripe" ? "paid" : "paid" };
 }
 
+/**
+ * Stripe pending bookings older than this are treated as abandoned. The
+ * customer opened the modal and clicked through to Stripe but never
+ * completed payment — we ignore them in admin views + counts.
+ */
+const STALE_PENDING_MS = 24 * 60 * 60 * 1000;
+
+function isFresh(b: StoredBooking): boolean {
+  if (b.paymentStatus !== "pending") return true;
+  if (b.source !== "stripe") return true;
+  return Date.now() - b.createdAt < STALE_PENDING_MS;
+}
+
 const KEY = "bookings";
 
 async function loadAll(): Promise<StoredBooking[]> {
@@ -36,19 +49,20 @@ async function loadAll(): Promise<StoredBooking[]> {
   return existing ?? [];
 }
 
-async function saveAll(bookings: StoredBooking[]): Promise<void> {
-  await writeStore(KEY, bookings);
-}
-
 export async function addBooking(b: StoredBooking): Promise<void> {
-  const all = await loadAll();
-  const deduped = all.filter((x) => x.id !== b.id);
-  await saveAll([...deduped, b]);
+  await updateStore<StoredBooking[]>(KEY, (current) => {
+    const all = Array.isArray(current) ? current : [];
+    const deduped = all.filter((x) => x.id !== b.id);
+    return [...deduped, b];
+  });
 }
 
 export async function getAllBookings(): Promise<StoredBooking[]> {
   const all = await loadAll();
-  return [...all].map(withDefaults).sort((a, b) => b.createdAt - a.createdAt);
+  return [...all]
+    .map(withDefaults)
+    .filter(isFresh)
+    .sort((a, b) => b.createdAt - a.createdAt);
 }
 
 export async function getBookingsForCourse(slug: string): Promise<StoredBooking[]> {
@@ -56,7 +70,14 @@ export async function getBookingsForCourse(slug: string): Promise<StoredBooking[
   return all
     .filter((b) => b.itemType === "course" && b.itemSlug === slug)
     .map(withDefaults)
+    .filter(isFresh)
     .sort((a, b) => b.createdAt - a.createdAt);
+}
+
+/** Includes abandoned Stripe checkouts — used by the safety check on purge. */
+export async function courseHasAnyBookings(slug: string): Promise<boolean> {
+  const all = await loadAll();
+  return all.some((b) => b.itemType === "course" && b.itemSlug === slug);
 }
 
 export interface BookingCounts {
@@ -70,6 +91,7 @@ export async function getBookingCountsByCourse(): Promise<Record<string, Booking
   for (const raw of all) {
     if (raw.itemType !== "course") continue;
     const b = withDefaults(raw);
+    if (!isFresh(b)) continue;
     if (!counts[b.itemSlug]) counts[b.itemSlug] = { paid: 0, pending: 0 };
     if (b.paymentStatus === "paid") counts[b.itemSlug].paid++;
     else counts[b.itemSlug].pending++;

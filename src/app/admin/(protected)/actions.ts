@@ -12,7 +12,10 @@ import {
   restoreCourse,
   updateCourse,
 } from "@/lib/course-store";
-import { getBookingsForCourse } from "@/lib/booking-store";
+import {
+  courseHasAnyBookings,
+  getBookingsForCourse,
+} from "@/lib/booking-store";
 import {
   sendCourseCancellationEmail,
   sendCourseConfirmationEmail,
@@ -120,14 +123,16 @@ function buildCourseFromFormData(formData: FormData, existing?: Course): Course 
     longDescription: String(formData.get("longDescription") ?? "").trim(),
     price,
     priceUnit,
-    duration: formatCourseDuration({
-      priceUnit,
-      status,
-      sessionCount,
-      sessionMinutes,
-      sessionTimes,
-      startDate,
-    }),
+    duration:
+      optionalString(formData.get("duration")) ??
+      formatCourseDuration({
+        priceUnit,
+        status,
+        sessionCount,
+        sessionMinutes,
+        sessionTimes,
+        startDate,
+      }),
     level,
     format,
     status,
@@ -213,6 +218,11 @@ export async function purgeCourseAction(formData: FormData): Promise<void> {
   await requireSession();
   const slug = String(formData.get("slug") ?? "");
   if (!slug) return;
+  if (await courseHasAnyBookings(slug)) {
+    // Refuse to hard-delete a course that has any bookings — the admin
+    // would lose visibility into who was enrolled. Restore + edit instead.
+    redirect(`/admin?purgeBlocked=${encodeURIComponent(slug)}`);
+  }
   await purgeCourse(slug);
   revalidatePath("/", "layout");
   redirect("/admin?purged=1");
@@ -225,6 +235,8 @@ export interface NotifyState {
   sent?: number;
   skipped?: number;
   error?: string;
+  /** Set on a successful cancel — lets the UI offer an "undo status" button. */
+  previousStatus?: "upcoming" | "open" | "cancelled";
 }
 
 async function notifyCourse(
@@ -290,12 +302,24 @@ async function notifyCourse(
     }
   }
 
+  let previousStatus: NotifyState["previousStatus"];
   if (action === "cancel") {
+    previousStatus = course.status;
     await updateCourse(slug, { status: "cancelled" });
   }
 
   revalidatePath("/", "layout");
-  return { ok: true, sent, skipped };
+  return { ok: true, sent, skipped, previousStatus };
+}
+
+/** Restore a course status after a cancel (emails are already sent). */
+export async function revertStatusAction(
+  slug: string,
+  targetStatus: "upcoming" | "open"
+): Promise<void> {
+  await requireSession();
+  await updateCourse(slug, { status: targetStatus });
+  revalidatePath("/", "layout");
 }
 
 export async function confirmCourseAction(
