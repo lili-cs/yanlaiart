@@ -87,8 +87,9 @@ function itemHref(item: CalendarItem): string {
 }
 
 function enrollHref(item: CalendarItem): string {
-  // ?book=1 tells the BookingButton on the detail page to auto-open its modal.
-  return `${itemHref(item)}?book=1`;
+  // Route to the course/event detail page so the user can read the full
+  // details before booking; they'll click Book Now there.
+  return itemHref(item);
 }
 
 export default function CalendarView({ items }: Props) {
