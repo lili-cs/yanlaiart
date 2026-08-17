@@ -7,25 +7,6 @@ import { Course } from "@/types";
  */
 export const COURSE_SEED: Course[] = [
   {
-    "slug": "free-trial-class",
-    "level": "All Levels",
-    "price": 0,
-    "title": "Free Trial Class",
-    "format": "in-person",
-    "status": "open",
-    "titleCn": "免费体验课",
-    "category": "drawing",
-    "duration": "60 min · one-time trial",
-    "featured": true,
-    "hidden": true,
-    "imageUrl": "/images/free-trial-class.jpg",
-    "priceUnit": "total",
-    "description": "Come try the studio — one free hour, no commitment, no cost.",
-    "maxStudents": 4,
-    "sessionMinutes": 60,
-    "longDescription": "New to Yan Lai Art? This free hour-long trial is our way of welcoming you into the studio. Choose your preferred day and time, and we'll set you up with materials, a warm cup of tea, and a short introduction to whichever medium calls to you — drawing, watercolor, or a little clay. Bring nothing but yourself; we provide everything. It's a low-pressure way to see if we're a good fit before enrolling in a full course."
-  },
-  {
     "slug": "fundamentals-of-drawing",
     "level": "Beginner",
     "price": 36000,

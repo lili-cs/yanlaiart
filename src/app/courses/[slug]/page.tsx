@@ -226,8 +226,7 @@ export default async function CourseDetailPage({ params }: Props) {
                   </div>
                 </div>
               ) : course.status === "open" ? (
-                // Open + no fixed schedule → book on demand (free trial,
-                // hourly ceramics).
+                // Open + no fixed schedule → book on demand (e.g. hourly ceramics).
                 <div className="flex flex-col gap-5 px-5 py-6 sm:flex-row sm:items-start sm:gap-8 sm:px-6">
                   <div className="sm:min-w-[10rem]">
                     <p className="text-2xl font-bold text-stone-900 sm:text-3xl">

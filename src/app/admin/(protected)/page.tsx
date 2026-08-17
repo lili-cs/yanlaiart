@@ -55,11 +55,7 @@ export default async function AdminDashboard({ searchParams }: Props) {
   return (
     <div>
       {undoCourse && (
-        <form
-          action={restoreCourseAction}
-          className="mb-4 flex flex-col gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between"
-        >
-          <input type="hidden" name="slug" value={undoCourse.slug} />
+        <div className="relative mb-4 flex flex-col gap-2 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 pr-11 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-2">
             <svg
               width="18"
@@ -78,13 +74,36 @@ export default async function AdminDashboard({ searchParams }: Props) {
               <strong>{undoCourse.title}</strong> deleted — moved to trash.
             </span>
           </div>
-          <button
-            type="submit"
-            className="inline-flex min-h-10 items-center justify-center self-start rounded-md bg-amber-900 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-amber-800 sm:self-auto"
+          <form action={restoreCourseAction}>
+            <input type="hidden" name="slug" value={undoCourse.slug} />
+            <button
+              type="submit"
+              className="inline-flex min-h-10 items-center justify-center self-start rounded-md bg-amber-900 px-4 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-amber-800 sm:self-auto"
+            >
+              Undo
+            </button>
+          </form>
+          <Link
+            href="/admin"
+            aria-label="Dismiss notice"
+            className="absolute right-2 top-2 inline-flex h-7 w-7 items-center justify-center rounded-md text-amber-800 hover:bg-amber-100 hover:text-amber-900"
           >
-            Undo
-          </button>
-        </form>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+          </Link>
+        </div>
       )}
 
       {restoredSlug && (

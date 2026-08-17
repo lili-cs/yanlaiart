@@ -719,7 +719,6 @@ export async function sendSubscriptionWelcomeToUser(
   const coursesUrl = `${baseUrl}/courses`;
   const calendarUrl = `${baseUrl}/calendar`;
   const contactUrl = `${baseUrl}/contact`;
-  const trialUrl = `${baseUrl}/courses/free-trial-class`;
 
   const greetingName = p.name || "there";
   const subject = "Welcome to Yan Lai Art — you're on the list";
@@ -739,8 +738,6 @@ export async function sendSubscriptionWelcomeToUser(
     ...FEATURED_COURSES.map(
       (c) => `• ${c.title} — ${c.meta} — ${baseUrl}/courses/${c.slug}`
     ),
-    "",
-    `Curious to try before you commit? Book a free 60-minute trial class — no cost, no commitment: ${trialUrl}`,
     "",
     "Handy links:",
     `• Browse courses: ${coursesUrl}`,
@@ -790,16 +787,6 @@ export async function sendSubscriptionWelcomeToUser(
       </ul>
 
       ${featuredHtml}
-
-      <div style="margin: 20px 0; padding: 16px; border: 1px solid #fcd34d; background: #fffbeb; border-radius: 10px;">
-        <p style="margin: 0 0 6px; font-weight: 600; color: #78350f;">Curious to try before you commit?</p>
-        <p style="margin: 0 0 12px; font-size: 13px; color: #92400e;">
-          Book a free 60-minute trial class — no cost, no commitment.
-        </p>
-        <a href="${escapeHtml(trialUrl)}" style="display: inline-block; background: #78350f; color: #ffffff; padding: 10px 18px; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 14px;">
-          Book a free trial
-        </a>
-      </div>
 
       <h3 style="margin: 20px 0 8px; font-size: 14px; color: #78350f; text-transform: uppercase; letter-spacing: 0.06em;">Handy links</h3>
       <p style="margin: 0 0 6px; font-size: 14px;">
