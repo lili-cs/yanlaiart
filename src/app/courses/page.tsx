@@ -1,10 +1,8 @@
 import type { Metadata } from "next";
-import CourseCard from "@/components/courses/CourseCard";
-import CategoryFilter from "@/components/courses/CategoryFilter";
-import PageHero from "@/components/ui/PageHero";
-import { getAllCourses, getCoursesByCategory } from "@/data/courses";
-import { Category } from "@/types";
 import { Suspense } from "react";
+import CourseCatalog from "@/components/courses/CourseCatalog";
+import PageHero from "@/components/ui/PageHero";
+import { getAllCourses } from "@/data/courses";
 
 export const metadata: Metadata = {
   title: "Courses",
@@ -12,34 +10,16 @@ export const metadata: Metadata = {
     "Browse drawing, painting, and ceramic art courses at Yan Lai Art. Find the perfect class for your skill level.",
 };
 
-// Courses are now admin-editable via Neon, so always render at request time.
+// Courses are admin-editable via Neon; always render at request time.
 export const dynamic = "force-dynamic";
 
 interface Props {
   searchParams: Promise<{ category?: string }>;
 }
 
-async function CourseGrid({ searchParams }: Props) {
-  const params = await searchParams;
-  const validCategories: Category[] = ["drawing", "painting", "ceramic"];
-  const category = validCategories.includes(params.category as Category)
-    ? (params.category as Category)
-    : undefined;
+export default async function CoursesPage({ searchParams }: Props) {
+  const [courses, params] = await Promise.all([getAllCourses(), searchParams]);
 
-  const courses = category
-    ? await getCoursesByCategory(category)
-    : await getAllCourses();
-
-  return (
-    <div className="grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-      {courses.map((course) => (
-        <CourseCard key={course.slug} course={course} />
-      ))}
-    </div>
-  );
-}
-
-export default async function CoursesPage(props: Props) {
   return (
     <>
       <PageHero
@@ -53,13 +33,8 @@ export default async function CoursesPage(props: Props) {
         <div className="pointer-events-none absolute -left-20 bottom-20 h-96 w-96 rounded-full bg-orange-200/30 blur-3xl" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Suspense>
-            <CategoryFilter />
+            <CourseCatalog courses={courses} initialCategory={params.category} />
           </Suspense>
-          <div className="mt-8">
-            <Suspense>
-              <CourseGrid searchParams={props.searchParams} />
-            </Suspense>
-          </div>
         </div>
       </div>
     </>
