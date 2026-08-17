@@ -2,6 +2,10 @@
 
 import { promises as fs } from "fs";
 import path from "path";
+import {
+  sendSubscriptionNotificationToOwner,
+  sendSubscriptionWelcomeToUser,
+} from "@/lib/email";
 
 interface SubscribeResult {
   ok: boolean;
@@ -66,6 +70,17 @@ export async function subscribe(formData: FormData): Promise<SubscribeResult> {
   } catch (err) {
     console.error("[newsletter] failed to persist subscriber:", err);
     console.log("[newsletter] subscription payload:", record);
+  }
+
+  const [ownerResult, welcomeResult] = await Promise.allSettled([
+    sendSubscriptionNotificationToOwner(record),
+    sendSubscriptionWelcomeToUser(record),
+  ]);
+  if (ownerResult.status === "rejected") {
+    console.error("[newsletter] owner notification failed:", ownerResult.reason);
+  }
+  if (welcomeResult.status === "rejected") {
+    console.error("[newsletter] welcome email failed:", welcomeResult.reason);
   }
 
   return {
