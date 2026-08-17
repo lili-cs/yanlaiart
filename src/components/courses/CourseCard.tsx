@@ -17,12 +17,12 @@ export default function CourseCard({ course }: CourseCardProps) {
       <div className="pointer-events-none absolute -right-16 -top-16 h-40 w-40 rounded-full bg-amber-200/0 blur-3xl transition-all duration-700 group-hover:bg-amber-300/40" />
       <div className="pointer-events-none absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-emerald-200/0 blur-3xl transition-all duration-700 group-hover:bg-emerald-300/40" />
 
-      <div className="relative aspect-[16/10] overflow-hidden bg-stone-100">
+      <div className="relative aspect-square overflow-hidden bg-stone-100">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={course.imageUrl}
           alt={course.title}
-          className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
       <div className="relative flex flex-1 flex-col p-5">

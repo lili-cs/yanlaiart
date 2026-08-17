@@ -49,12 +49,12 @@ export default async function CourseDetailPage({ params }: Props) {
         </Link>
 
         <div className="overflow-hidden rounded-2xl border border-stone-300/70 bg-stone-50/95 shadow-xl shadow-stone-500/15 backdrop-blur-sm">
-          <div className="relative aspect-[16/10] overflow-hidden bg-stone-200 sm:aspect-[2/1]">
+          <div className="relative aspect-square overflow-hidden bg-stone-200">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={course.imageUrl}
               alt={course.title}
-              className="h-full w-full object-contain"
+              className="h-full w-full object-cover"
             />
           </div>
 
