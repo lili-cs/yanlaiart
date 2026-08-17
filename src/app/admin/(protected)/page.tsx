@@ -145,9 +145,14 @@ export default async function AdminDashboard({ searchParams }: Props) {
           </thead>
           <tbody className="divide-y divide-stone-200">
             {courses.map((c) => (
-              <tr key={c.slug} className="align-top">
-                <td className="px-4 py-3">
-                  <div className="font-semibold text-stone-900">{c.title}</div>
+              <tr
+                key={c.slug}
+                className="group align-top transition-colors hover:bg-amber-100"
+              >
+                <td className="relative px-4 py-3 before:absolute before:inset-y-0 before:left-0 before:w-0 before:bg-amber-600 before:transition-all before:duration-200 group-hover:before:w-1.5">
+                  <div className="font-semibold text-stone-900 group-hover:text-amber-900">
+                    {c.title}
+                  </div>
                   <div className="text-xs text-stone-500">{c.titleCn}</div>
                   {c.format === "online" && (
                     <div className="mt-1 truncate text-xs text-teal-700">

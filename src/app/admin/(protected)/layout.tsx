@@ -33,6 +33,12 @@ export default async function ProtectedLayout({
             <Link href="/admin" className="text-base font-semibold text-stone-900">
               Yan Lai Art · Admin
             </Link>
+            <Link
+              href="/admin/hours"
+              className="hidden text-sm text-stone-600 hover:text-stone-900 sm:inline"
+            >
+              Business hours
+            </Link>
             <span className="hidden text-xs text-stone-500 sm:inline">
               Signed in as <strong className="text-stone-700">{session.username}</strong>
             </span>

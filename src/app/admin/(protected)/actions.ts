@@ -19,8 +19,14 @@ import {
 import {
   sendCourseCancellationEmail,
   sendCourseConfirmationEmail,
+  sendCourseFollowUpEmail,
 } from "@/lib/email";
 import { formatCourseDuration } from "@/lib/utils";
+import {
+  saveBusinessHours,
+  type BusinessHours,
+  type DayHours,
+} from "@/lib/business-hours";
 import type { Course, Category } from "@/types";
 
 async function requireSession(): Promise<void> {
@@ -241,22 +247,23 @@ export interface NotifyState {
 
 async function notifyCourse(
   slug: string,
-  action: "confirm" | "cancel",
-  customMessage: string
+  action: "confirm" | "cancel" | "followup",
+  customMessage: string,
+  bookingIds: string[]
 ): Promise<NotifyState> {
   const course = await getCourseBySlug(slug);
   if (!course) return { error: "Course not found." };
+  if (bookingIds.length === 0) {
+    return { error: "Please select at least one student." };
+  }
 
   const allBookings = await getBookingsForCourse(slug);
-  const bookings = allBookings.filter((b) => b.paymentStatus === "paid");
+  const wanted = new Set(bookingIds);
+  const bookings = allBookings.filter((b) => wanted.has(b.id));
   if (bookings.length === 0) {
-    if (allBookings.length > 0) {
-      return {
-        error:
-          "No paid bookings yet — pending checkouts are skipped for notifications.",
-      };
-    }
-    return { error: "There are no bookings to notify." };
+    return {
+      error: "None of the selected students match a booking for this course.",
+    };
   }
 
   const courseName = `${course.title}${course.titleCn ? ` (${course.titleCn})` : ""}`;
@@ -271,6 +278,15 @@ async function notifyCourse(
     try {
       if (action === "cancel") {
         await sendCourseCancellationEmail({
+          courseName,
+          customerName: b.customerName || "there",
+          customerEmail: b.customerEmail,
+          requestedDate: b.requestedDate,
+          requestedTime: b.requestedTime,
+          customMessage,
+        });
+      } else if (action === "followup") {
+        await sendCourseFollowUpEmail({
           courseName,
           customerName: b.customerName || "there",
           customerEmail: b.customerEmail,
@@ -322,15 +338,32 @@ export async function revertStatusAction(
   revalidatePath("/", "layout");
 }
 
+function readBookingIds(formData: FormData): string[] {
+  return formData
+    .getAll("bookingId")
+    .map((v) => String(v).trim())
+    .filter(Boolean);
+}
+
+function requireMessage(formData: FormData): string | { error: string } {
+  const customMessage = String(formData.get("customMessage") ?? "").trim();
+  if (!customMessage) {
+    return { error: "Please write a message before sending." };
+  }
+  return customMessage;
+}
+
 export async function confirmCourseAction(
   slug: string,
   _prev: NotifyState,
   formData: FormData
 ): Promise<NotifyState> {
   await requireSession();
-  const customMessage = String(formData.get("customMessage") ?? "").trim();
+  const msg = requireMessage(formData);
+  if (typeof msg !== "string") return msg;
+  const bookingIds = readBookingIds(formData);
   try {
-    return await notifyCourse(slug, "confirm", customMessage);
+    return await notifyCourse(slug, "confirm", msg, bookingIds);
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Failed to send notifications.",
@@ -344,12 +377,68 @@ export async function cancelCourseAction(
   formData: FormData
 ): Promise<NotifyState> {
   await requireSession();
-  const customMessage = String(formData.get("customMessage") ?? "").trim();
+  const msg = requireMessage(formData);
+  if (typeof msg !== "string") return msg;
+  const bookingIds = readBookingIds(formData);
   try {
-    return await notifyCourse(slug, "cancel", customMessage);
+    return await notifyCourse(slug, "cancel", msg, bookingIds);
   } catch (err) {
     return {
       error: err instanceof Error ? err.message : "Failed to send notifications.",
     };
   }
+}
+
+export async function followUpCourseAction(
+  slug: string,
+  _prev: NotifyState,
+  formData: FormData
+): Promise<NotifyState> {
+  await requireSession();
+  const msg = requireMessage(formData);
+  if (typeof msg !== "string") return msg;
+  const bookingIds = readBookingIds(formData);
+  try {
+    return await notifyCourse(slug, "followup", msg, bookingIds);
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Failed to send notifications.",
+    };
+  }
+}
+
+/* ---- Business hours ------------------------------------------------ */
+
+export interface HoursFormState {
+  ok?: boolean;
+  error?: string;
+}
+
+export async function updateBusinessHoursAction(
+  _prev: HoursFormState,
+  formData: FormData
+): Promise<HoursFormState> {
+  await requireSession();
+  const days: DayHours[] = [];
+  for (let i = 0; i < 7; i++) {
+    const open = String(formData.get(`day-${i}-open`) ?? "").trim() || "10:00";
+    const close = String(formData.get(`day-${i}-close`) ?? "").trim() || "19:00";
+    const closed = formData.get(`day-${i}-closed`) === "on";
+    if (!closed && open >= close) {
+      return {
+        error: `Closing time must be after opening time (day ${i}).`,
+      };
+    }
+    days.push({ open, close, closed });
+  }
+  const next: BusinessHours = { days };
+  try {
+    await saveBusinessHours(next);
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Failed to save business hours.",
+    };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true };
 }

@@ -130,6 +130,20 @@ function fromAddress(): string {
   );
 }
 
+/**
+ * Where customer replies to our outbound mail should land. We can't send from
+ * @icloud.com through Resend (Apple's domain isn't verifiable), so From must
+ * stay on the verified @yanlaiart.com domain — but we set reply_to explicitly
+ * so hitting Reply reaches the owner's real inbox.
+ */
+function ownerReplyTo(): string | undefined {
+  return (
+    process.env.BOOKING_TO_EMAIL ??
+    process.env.CONTACT_TO_EMAIL ??
+    undefined
+  );
+}
+
 function buildJoinMeetingHtml(url: string, instructions?: string): string {
   const instructionsBlock = instructions
     ? `<div style="margin: 12px 0 0; padding-top: 12px; border-top: 1px dashed #99f6e4;">
@@ -286,6 +300,7 @@ export async function sendBookingConfirmationToCustomer(
   await sendResendEmail({
     from: fromAddress(),
     to: [p.customerEmail],
+    reply_to: ownerReplyTo(),
     subject,
     html,
     text,
@@ -308,65 +323,207 @@ export interface CourseStatusEmailInput {
   isOnline?: boolean;
 }
 
-function renderCustomMessageHtml(msg?: string): string {
-  if (!msg) return "";
+/* ---- Shared studio letterhead (used by admin-facing emails) ---- */
+
+const SERIF_STACK =
+  "Georgia, 'Iowan Old Style', 'Palatino Linotype', Palatino, 'URW Palladio L', 'Nimbus Roman No9 L', serif";
+const SANS_STACK =
+  "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
+interface StudioEmailInput {
+  customerName: string;
+  kicker: string;
+  headline: string;
+  body: string;
+  details: Array<[string, string]>;
+  cta?: { label: string; url: string };
+  ctaColor?: string;
+  postScript?: string;
+}
+
+function buildStudioEmailText(p: Omit<StudioEmailInput, "ctaColor">): string {
+  const detailLines = p.details.map(([k, v]) => `${k}: ${v}`);
+  return [
+    "YAN LAI ART",
+    "",
+    p.kicker.toUpperCase(),
+    p.headline,
+    "",
+    `Hi ${p.customerName},`,
+    "",
+    p.body,
+    "",
+    ...detailLines,
+    "",
+    p.cta ? `${p.cta.label}: ${p.cta.url}` : "",
+    p.postScript ?? "",
+    "",
+    "— Yan Lai Art",
+    "Pennington, NJ 08534",
+  ]
+    .filter((l) => l !== null && l !== undefined)
+    .join("\n");
+}
+
+function buildStudioEmailHtml(
+  p: StudioEmailInput & { kickerColor: string }
+): string {
+  const accent = p.kickerColor;
+  const detailsHtml = p.details.length
+    ? `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin: 32px 0 0; border-collapse: collapse;">
+         ${p.details
+           .map(
+             ([k, v]) => `
+             <tr>
+               <td style="padding: 0 20px 4px 0; vertical-align: top; font-family: ${SANS_STACK}; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.12em; color: ${accent};">${escapeHtml(k)}</td>
+               <td style="padding: 0 0 12px; vertical-align: top; font-family: ${SERIF_STACK}; font-size: 16px; color: #2d251f;">${escapeHtml(v)}</td>
+             </tr>`
+           )
+           .join("")}
+       </table>`
+    : "";
+
+  const bodyHtml = p.body
+    ? p.body
+        .split(/\n{2,}/)
+        .map(
+          (para) =>
+            `<p style="margin: 0 0 18px; font-family: ${SERIF_STACK}; font-size: 17px; line-height: 1.7; color: #2d251f; white-space: pre-wrap;">${escapeHtml(para.trim())}</p>`
+        )
+        .join("")
+    : "";
+
+  const ctaColor = p.ctaColor ?? accent;
+  const ctaHtml = p.cta
+    ? `<div style="margin: 28px 0 0;">
+         <a href="${escapeHtml(p.cta.url)}" style="display: inline-block; padding: 12px 22px; background: ${ctaColor}; color: #ffffff; text-decoration: none; font-family: ${SANS_STACK}; font-size: 13px; font-weight: 600; letter-spacing: 0.02em; border-radius: 4px;">${escapeHtml(p.cta.label)}</a>
+       </div>`
+    : "";
+
+  const postScriptHtml = p.postScript
+    ? `<p style="margin: 28px 0 0; font-family: ${SERIF_STACK}; font-size: 15px; line-height: 1.65; color: #6b5e50; font-style: italic;">${escapeHtml(p.postScript)}</p>`
+    : "";
+
   return `
-    <div style="margin: 0 0 20px; padding: 14px 16px; background: #faf6ec; border-left: 3px solid #b8804b; border-radius: 4px;">
-      <p style="margin: 0 0 4px; font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: #78716c;">Note from Yan Lai Art</p>
-      <p style="margin: 0; white-space: pre-wrap; color: #292524;">${escapeHtml(msg)}</p>
+    <div style="margin: 0; padding: 0; background: #faf6ef;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background: #faf6ef; padding: 32px 16px;">
+        <tr>
+          <td align="center">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="width: 100%; max-width: 580px; background: #fffdf8; border: 1px solid #ede3cf; border-radius: 6px;">
+              <tr>
+                <td style="padding: 40px 44px 12px;">
+                  <div style="font-family: ${SANS_STACK}; font-size: 11px; font-weight: 700; letter-spacing: 0.28em; color: #78350f; text-transform: uppercase;">
+                    Yan Lai Art
+                  </div>
+                  <div style="margin: 12px 0 0; height: 1px; background: #ede3cf; line-height: 1px; font-size: 0;">&nbsp;</div>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 24px 44px 0;">
+                  <div style="font-family: ${SANS_STACK}; font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: ${accent};">
+                    ${escapeHtml(p.kicker)}
+                  </div>
+                  <h1 style="margin: 8px 0 24px; font-family: ${SERIF_STACK}; font-size: 28px; line-height: 1.2; font-weight: 400; color: #2d251f; letter-spacing: -0.005em;">
+                    ${escapeHtml(p.headline)}
+                  </h1>
+                  <p style="margin: 0 0 22px; font-family: ${SERIF_STACK}; font-size: 17px; line-height: 1.6; color: #6b5e50;">
+                    Hi ${escapeHtml(p.customerName)},
+                  </p>
+                  ${bodyHtml}
+                  ${ctaHtml}
+                  ${detailsHtml}
+                  ${postScriptHtml}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 36px 44px 40px;">
+                  <div style="height: 1px; background: #ede3cf; line-height: 1px; font-size: 0;">&nbsp;</div>
+                  <p style="margin: 20px 0 4px; font-family: ${SERIF_STACK}; font-size: 15px; color: #6b5e50; font-style: italic;">
+                    With warmth,
+                  </p>
+                  <p style="margin: 0 0 12px; font-family: ${SANS_STACK}; font-size: 12px; font-weight: 700; letter-spacing: 0.24em; color: #78350f; text-transform: uppercase;">
+                    Yan Lai Art
+                  </p>
+                  <p style="margin: 0; font-family: ${SANS_STACK}; font-size: 12px; color: #a8998a;">
+                    Pennington, NJ 08534
+                  </p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
     </div>
   `.trim();
 }
 
-function renderCustomMessageText(msg?: string): string {
-  if (!msg) return "";
-  return `\nA note from Yan Lai Art:\n${msg}\n`;
+export async function sendCourseFollowUpEmail(
+  p: CourseStatusEmailInput
+): Promise<void> {
+  const subject = `About your booking — ${p.courseName}`;
+  const scheduleLine = p.requestedDate
+    ? `${formatRequestedDate(p.requestedDate)}${p.requestedTime ? ` · ${formatRequestedTime(p.requestedTime)}` : ""}`
+    : "";
+  const bodyText = p.customMessage?.trim() ?? "";
+
+  const text = buildStudioEmailText({
+    customerName: p.customerName,
+    kicker: "About your booking",
+    headline: p.courseName,
+    body: bodyText,
+    details: scheduleLine ? [["Your requested slot", scheduleLine]] : [],
+  });
+
+  const html = buildStudioEmailHtml({
+    customerName: p.customerName,
+    kicker: "About your booking",
+    kickerColor: "#b45309",
+    headline: p.courseName,
+    body: bodyText,
+    details: scheduleLine ? [["Your requested slot", scheduleLine]] : [],
+  });
+
+  await sendResendEmail({
+    from: fromAddress(),
+    to: [p.customerEmail],
+    reply_to: ownerReplyTo(),
+    subject,
+    html,
+    text,
+  });
 }
 
 export async function sendCourseCancellationEmail(
   p: CourseStatusEmailInput
 ): Promise<void> {
-  const subject = `Update: ${p.courseName} has been cancelled`;
+  const subject = `${p.courseName} has been cancelled`;
 
-  const text = [
-    `Hi ${p.customerName},`,
-    "",
-    `We're sorry to share that ${p.courseName} has been cancelled.`,
-    p.requestedDate ? `Your requested slot: ${formatRequestedDate(p.requestedDate)}${p.requestedTime ? ` at ${formatRequestedTime(p.requestedTime)}` : ""}` : "",
-    "",
-    "If you paid for this course, we'll process a full refund to your original payment method within a few business days. If we can help with anything else — including moving your enrollment to another course — just reply to this email.",
-    renderCustomMessageText(p.customMessage),
-    "Thank you for your understanding.",
-    "",
-    "— Yan Lai Art",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const scheduleLine = p.requestedDate
+    ? `${formatRequestedDate(p.requestedDate)}${p.requestedTime ? ` · ${formatRequestedTime(p.requestedTime)}` : ""}`
+    : "";
+  const bodyText = p.customMessage?.trim() ?? "";
 
-  const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #292524; max-width: 560px;">
-      <h2 style="margin: 0 0 4px; color: #991b1b; font-size: 20px;">Course cancelled</h2>
-      <p style="margin: 0 0 16px; color: #57534e;">Hi ${escapeHtml(p.customerName)},</p>
-      <p style="margin: 0 0 16px;">
-        We're sorry to share that <strong>${escapeHtml(p.courseName)}</strong> has been cancelled.
-      </p>
-      ${
-        p.requestedDate
-          ? `<p style="margin: 0 0 16px; color: #57534e; font-size: 14px;">Your requested slot: <strong style="color: #292524;">${escapeHtml(formatRequestedDate(p.requestedDate))}${p.requestedTime ? ` at ${escapeHtml(formatRequestedTime(p.requestedTime))}` : ""}</strong></p>`
-          : ""
-      }
-      <p style="margin: 0 0 16px;">
-        If you paid for this course, we'll process a full refund to your original payment method within a few business days. If we can help with anything else — including moving your enrollment to another course — just reply to this email.
-      </p>
-      ${renderCustomMessageHtml(p.customMessage)}
-      <p style="margin: 0 0 8px; color: #57534e;">Thank you for your understanding.</p>
-      <p style="margin: 24px 0 0; color: #78350f; font-weight: 600;">— Yan Lai Art</p>
-    </div>
-  `.trim();
+  const text = buildStudioEmailText({
+    customerName: p.customerName,
+    kicker: "Course cancelled",
+    headline: p.courseName,
+    body: bodyText,
+    details: scheduleLine ? [["Your requested slot", scheduleLine]] : [],
+  });
+
+  const html = buildStudioEmailHtml({
+    customerName: p.customerName,
+    kicker: "Course cancelled",
+    kickerColor: "#a01d2a",
+    headline: p.courseName,
+    body: bodyText,
+    details: scheduleLine ? [["Your requested slot", scheduleLine]] : [],
+  });
 
   await sendResendEmail({
     from: fromAddress(),
     to: [p.customerEmail],
+    reply_to: ownerReplyTo(),
     subject,
     html,
     text,
@@ -379,59 +536,46 @@ export async function sendCourseConfirmationEmail(
   const subject = `Confirmed: ${p.courseName} is going ahead`;
 
   const scheduleLine = p.requestedDate
-    ? `Your session: ${formatRequestedDate(p.requestedDate)}${p.requestedTime ? ` at ${formatRequestedTime(p.requestedTime)}` : ""}`
+    ? `${formatRequestedDate(p.requestedDate)}${p.requestedTime ? ` · ${formatRequestedTime(p.requestedTime)}` : ""}`
     : "";
   const whereLine = p.isOnline
     ? p.meetingUrl
-      ? `Where: Online — ${p.meetingUrl}`
-      : "Where: Online (link to follow)"
-    : p.location
-      ? `Where: ${p.location}`
-      : "";
+      ? "Online — see meeting link above"
+      : "Online (link to follow)"
+    : p.location ?? "";
 
-  const text = [
-    `Hi ${p.customerName},`,
-    "",
-    `Good news — ${p.courseName} is confirmed and going ahead as scheduled.`,
-    "",
-    scheduleLine,
-    whereLine,
-    "",
-    p.isOnline && p.meetingUrl
-      ? `Click your calendar invite (sent when you booked) at class time to join, or use this link directly: ${p.meetingUrl}`
-      : "See you soon!",
-    renderCustomMessageText(p.customMessage),
-    "If you have any questions, just reply to this email.",
-    "",
-    "— Yan Lai Art",
-  ]
-    .filter(Boolean)
-    .join("\n");
+  const bodyText = p.customMessage?.trim() ?? "";
 
-  const joinBlock =
-    p.isOnline && p.meetingUrl
-      ? buildJoinMeetingHtml(p.meetingUrl, p.meetingInstructions)
-      : "";
+  const details: Array<[string, string]> = [];
+  if (scheduleLine) details.push(["When", scheduleLine]);
+  if (whereLine) details.push(["Where", whereLine]);
 
-  const html = `
-    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #292524; max-width: 560px;">
-      <h2 style="margin: 0 0 4px; color: #065f46; font-size: 20px;">You&#39;re confirmed</h2>
-      <p style="margin: 0 0 16px; color: #57534e;">Hi ${escapeHtml(p.customerName)},</p>
-      <p style="margin: 0 0 16px;">
-        Good news — <strong>${escapeHtml(p.courseName)}</strong> is confirmed and going ahead as scheduled.
-      </p>
-      ${scheduleLine ? `<p style="margin: 0 0 8px; font-size: 14px; color: #57534e;">${escapeHtml(scheduleLine)}</p>` : ""}
-      ${whereLine ? `<p style="margin: 0 0 16px; font-size: 14px; color: #57534e;">${escapeHtml(whereLine)}</p>` : ""}
-      ${joinBlock}
-      ${renderCustomMessageHtml(p.customMessage)}
-      <p style="margin: 0 0 8px; color: #57534e;">If you have any questions, just reply to this email.</p>
-      <p style="margin: 24px 0 0; color: #78350f; font-weight: 600;">— Yan Lai Art</p>
-    </div>
-  `.trim();
+  const text = buildStudioEmailText({
+    customerName: p.customerName,
+    kicker: "You're confirmed",
+    headline: p.courseName,
+    body: bodyText,
+    details,
+    cta: p.isOnline && p.meetingUrl ? { label: "Join meeting", url: p.meetingUrl } : undefined,
+    postScript: "If you have any questions, just reply to this email.",
+  });
+
+  const html = buildStudioEmailHtml({
+    customerName: p.customerName,
+    kicker: "You're confirmed",
+    kickerColor: "#0f766e",
+    headline: p.courseName,
+    body: bodyText,
+    details,
+    cta: p.isOnline && p.meetingUrl ? { label: "Join meeting", url: p.meetingUrl } : undefined,
+    ctaColor: "#0f766e",
+    postScript: "If you have any questions, just reply to this email.",
+  });
 
   await sendResendEmail({
     from: fromAddress(),
     to: [p.customerEmail],
+    reply_to: ownerReplyTo(),
     subject,
     html,
     text,
@@ -545,7 +689,7 @@ const FEATURED_COURSES: FeaturedCourse[] = [
   },
 ];
 
-function publicBaseUrl(): string {
+export function publicBaseUrl(): string {
   const explicit = process.env.EMAIL_PUBLIC_URL?.trim();
   if (explicit) return explicit.replace(/\/$/, "");
   const site = process.env.NEXT_PUBLIC_BASE_URL?.trim();
@@ -661,6 +805,7 @@ export async function sendSubscriptionWelcomeToUser(
   await sendResendEmail({
     from: fromAddress(),
     to: [p.email],
+    reply_to: ownerReplyTo(),
     subject,
     html,
     text,

@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { useSearchParams } from "next/navigation";
 import { trapFocus } from "@/lib/utils";
+import {
+  WEEKDAY_LABELS,
+  weekdayOfLocalDate,
+  type BusinessHours,
+} from "@/lib/business-hours-types";
 
 interface BookingButtonProps {
   itemType: "course" | "event";
@@ -11,6 +16,7 @@ interface BookingButtonProps {
   label?: string;
   disabled?: boolean;
   disabledMessage?: string;
+  businessHours?: BusinessHours;
 }
 
 type Status = "idle" | "submitting" | "error";
@@ -21,15 +27,34 @@ export default function BookingButton({
   label = "Book Now",
   disabled = false,
   disabledMessage,
+  businessHours,
 }: BookingButtonProps) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
+  const [pickedDate, setPickedDate] = useState("");
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const searchParams = useSearchParams();
   const bookParam = searchParams.get("book");
+
+  const dayInfo = useMemo(() => {
+    if (!businessHours || !pickedDate) return null;
+    const weekday = weekdayOfLocalDate(pickedDate);
+    if (weekday < 0) return null;
+    const day = businessHours.days[weekday];
+    return { weekday, day };
+  }, [businessHours, pickedDate]);
+
+  const closedNotice =
+    dayInfo?.day.closed
+      ? `We're closed on ${WEEKDAY_LABELS[dayInfo.weekday]}s — please pick another day.`
+      : null;
+  const hoursNotice =
+    dayInfo && !dayInfo.day.closed
+      ? `${WEEKDAY_LABELS[dayInfo.weekday]} hours: ${dayInfo.day.open}–${dayInfo.day.close}`
+      : null;
 
   // Auto-open the modal when the user arrives with ?book=1 (from the calendar's
   // Enroll button). React's "state during render" pattern — no effect needed.
@@ -91,6 +116,29 @@ export default function BookingButton({
     const form = event.currentTarget;
     const fd = new FormData(form);
 
+    const dateValue = String(fd.get("requestedDate") ?? "");
+    const timeValue = String(fd.get("requestedTime") ?? "");
+    if (itemType === "course" && businessHours && dateValue && timeValue) {
+      const weekday = weekdayOfLocalDate(dateValue);
+      if (weekday >= 0) {
+        const day = businessHours.days[weekday];
+        if (day.closed) {
+          setStatus("error");
+          setErrorMsg(
+            `We're closed on ${WEEKDAY_LABELS[weekday]}s — please pick another day.`
+          );
+          return;
+        }
+        if (timeValue < day.open || timeValue > day.close) {
+          setStatus("error");
+          setErrorMsg(
+            `${WEEKDAY_LABELS[weekday]} hours are ${day.open}–${day.close}. Please pick a time in that range.`
+          );
+          return;
+        }
+      }
+    }
+
     setStatus("submitting");
     setErrorMsg("");
 
@@ -100,8 +148,8 @@ export default function BookingButton({
       name: String(fd.get("name") ?? ""),
       email: String(fd.get("email") ?? ""),
       phone: String(fd.get("phone") ?? ""),
-      requestedDate: String(fd.get("requestedDate") ?? ""),
-      requestedTime: String(fd.get("requestedTime") ?? ""),
+      requestedDate: dateValue,
+      requestedTime: timeValue,
       notes: String(fd.get("notes") ?? ""),
       botcheck: String(fd.get("botcheck") ?? ""),
     };
@@ -260,38 +308,53 @@ export default function BookingButton({
                 </div>
 
                 {itemType === "course" && (
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <label
-                        htmlFor="booking-date"
-                        className="block text-sm font-medium text-stone-700"
-                      >
-                        Preferred date
-                      </label>
-                      <input
-                        id="booking-date"
-                        name="requestedDate"
-                        type="date"
-                        required
-                        min={today}
-                        className="mt-1 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 sm:text-sm"
-                      />
+                  <div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div>
+                        <label
+                          htmlFor="booking-date"
+                          className="block text-sm font-medium text-stone-700"
+                        >
+                          Preferred date
+                        </label>
+                        <input
+                          id="booking-date"
+                          name="requestedDate"
+                          type="date"
+                          required
+                          min={today}
+                          value={pickedDate}
+                          onChange={(e) => setPickedDate(e.target.value)}
+                          className="mt-1 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 sm:text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label
+                          htmlFor="booking-time"
+                          className="block text-sm font-medium text-stone-700"
+                        >
+                          Preferred time
+                        </label>
+                        <input
+                          id="booking-time"
+                          name="requestedTime"
+                          type="time"
+                          required
+                          disabled={Boolean(dayInfo?.day.closed)}
+                          min={dayInfo && !dayInfo.day.closed ? dayInfo.day.open : undefined}
+                          max={dayInfo && !dayInfo.day.closed ? dayInfo.day.close : undefined}
+                          className="mt-1 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 disabled:cursor-not-allowed disabled:bg-stone-100 disabled:text-stone-400 sm:text-sm"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label
-                        htmlFor="booking-time"
-                        className="block text-sm font-medium text-stone-700"
-                      >
-                        Preferred time
-                      </label>
-                      <input
-                        id="booking-time"
-                        name="requestedTime"
-                        type="time"
-                        required
-                        className="mt-1 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 sm:text-sm"
-                      />
-                    </div>
+                    {closedNotice && (
+                      <p className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                        {closedNotice}
+                      </p>
+                    )}
+                    {hoursNotice && !closedNotice && (
+                      <p className="mt-2 text-xs text-stone-500">{hoursNotice}</p>
+                    )}
                   </div>
                 )}
 

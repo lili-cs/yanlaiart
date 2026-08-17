@@ -11,6 +11,7 @@ import {
 } from "@/lib/utils";
 import Badge from "@/components/ui/Badge";
 import BookingButton from "@/components/courses/BookingButton";
+import { getBusinessHours } from "@/lib/business-hours";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -34,6 +35,7 @@ export default async function CourseDetailPage({ params }: Props) {
   const { slug } = await params;
   const course = await getCourseBySlug(slug);
   if (!course) notFound();
+  const businessHours = await getBusinessHours();
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-12 sm:py-16 md:py-20">
@@ -315,6 +317,7 @@ export default async function CourseDetailPage({ params }: Props) {
                         ? "This course isn't open for booking yet. Follow us or check back soon for enrollment."
                         : undefined
                   }
+                  businessHours={businessHours}
                 />
               </Suspense>
             </div>

@@ -11,6 +11,7 @@ import {
   type BookingEmailPayload,
 } from "@/lib/email";
 import { addBooking } from "@/lib/booking-store";
+import { getBusinessHours, validateBookingSlot } from "@/lib/business-hours";
 
 const STUDIO_ADDRESS = "Yan Lai Art Studio · Pennington, NJ 08534";
 
@@ -80,6 +81,14 @@ export async function POST(request: Request) {
   }
   if (notes.length > 2000) {
     return NextResponse.json({ error: "Notes are too long." }, { status: 400 });
+  }
+
+  if (itemType === "course") {
+    const hours = await getBusinessHours();
+    const check = validateBookingSlot(requestedDate, requestedTime, hours);
+    if (!check.ok) {
+      return NextResponse.json({ error: check.error }, { status: 400 });
+    }
   }
 
   let itemName: string;

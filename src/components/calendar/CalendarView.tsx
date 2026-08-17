@@ -356,8 +356,10 @@ export default function CalendarView({ items }: Props) {
                             {it.enrollable && (
                               <Link
                                 href={enrollHref(it)}
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 title="Book this course"
-                                aria-label={`Book ${it.title}`}
+                                aria-label={`Book ${it.title} (opens in new tab)`}
                                 className={cn(
                                   "flex flex-1 items-center justify-center bg-stone-900 px-1.5 py-0.5 text-white transition-colors hover:bg-stone-800",
                                   (joinable || it.type === "event") && "border-l border-current/20"
@@ -443,8 +445,10 @@ export default function CalendarView({ items }: Props) {
                       {it.enrollable && (
                         <Link
                           href={enrollHref(it)}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="inline-flex min-h-11 items-center justify-center rounded-lg bg-stone-900 px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-stone-800"
-                          aria-label={`Book ${it.title}`}
+                          aria-label={`Book ${it.title} (opens in new tab)`}
                         >
                           Book
                         </Link>
