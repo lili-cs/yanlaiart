@@ -170,6 +170,8 @@ export default function MeetingDetailsButton({
                 <div className="mt-5 border-t border-stone-200 pt-4">
                   <a
                     href={courseHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-xs font-medium text-stone-600 hover:text-stone-900"
                   >
                     See full course page →

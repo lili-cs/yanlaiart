@@ -310,8 +310,10 @@ export default function CalendarView({ items }: Props) {
                       >
                         <Link
                           href={itemHref(it)}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="block px-1.5 py-1 transition-colors"
-                          title={`${it.title}${it.startTime ? ` · ${formatTime(it.startTime)}` : ""}${it.sessionInfo ? ` · ${it.sessionInfo}` : ""}`}
+                          title={`${it.title}${it.startTime ? ` · ${formatTime(it.startTime)}` : ""}${it.sessionInfo ? ` · ${it.sessionInfo}` : ""} (opens in new tab)`}
                         >
                           <div className="text-[10px] font-semibold uppercase tracking-wider tabular-nums opacity-80">
                             {it.startTime ? formatTime(it.startTime) : ""}
@@ -407,6 +409,9 @@ export default function CalendarView({ items }: Props) {
                   <div className="flex items-stretch gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-50/40">
                     <Link
                       href={itemHref(it)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`${it.title} (opens in new tab)`}
                       className="flex min-w-0 flex-1 items-stretch gap-3"
                     >
                       <div className="flex w-14 shrink-0 flex-col items-center justify-center rounded-lg bg-stone-100 py-1 text-center">
