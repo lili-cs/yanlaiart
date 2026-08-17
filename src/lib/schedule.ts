@@ -45,18 +45,74 @@ function addMinutesToHhmm(hhmm: string, minutes: number): string {
   return `${pad(Math.floor(wrapped / 60))}:${pad(wrapped % 60)}`;
 }
 
+function dayOfWeekUtc(iso: string): number {
+  return new Date(`${iso}T12:00:00Z`).getUTCDay();
+}
+
+/** Whole-week offset from anchor's Sunday to date's Sunday. */
+function weekOffsetSunday(dateIso: string, anchorIso: string): number {
+  const anchor = new Date(`${anchorIso}T12:00:00Z`);
+  const anchorSun = addDays(anchorIso, -anchor.getUTCDay());
+  const d = new Date(`${dateIso}T12:00:00Z`);
+  const dSun = addDays(dateIso, -d.getUTCDay());
+  return Math.round(
+    (new Date(`${dSun}T12:00:00Z`).getTime() -
+      new Date(`${anchorSun}T12:00:00Z`).getTime()) /
+      (7 * 86400 * 1000)
+  );
+}
+
+/**
+ * Compute the list of session dates a course produces from its recurrence
+ * rule. Backward compatible: a course without `recurrence` behaves as
+ * weekly-on-startDate-weekday for `sessionCount` occurrences.
+ */
+function courseSessionDates(c: Course): string[] {
+  if (!c.startDate) return [];
+  const rec = c.recurrence ?? {};
+  const interval = Math.max(1, rec.interval ?? 1);
+  const weekdays =
+    rec.weekdays && rec.weekdays.length
+      ? [...new Set(rec.weekdays)].sort((a, b) => a - b)
+      : [dayOfWeekUtc(c.startDate)];
+  const endMode = rec.endMode ?? "count";
+  const targetCount = c.sessionCount ?? 0;
+  const skip = new Set(c.skipDates ?? []);
+
+  const out: string[] = [];
+  const MAX_DAYS = 365 * 3; // 3-year safety cap
+  for (let offset = 0; offset < MAX_DAYS; offset++) {
+    const date = addDays(c.startDate, offset);
+    if (date < c.startDate) continue;
+    const wk = weekOffsetSunday(date, c.startDate);
+    if (wk % interval !== 0) continue;
+    if (!weekdays.includes(dayOfWeekUtc(date))) continue;
+    if (skip.has(date)) continue;
+    if (endMode === "date") {
+      if (rec.endDate && date > rec.endDate) break;
+    } else {
+      if (targetCount && out.length >= targetCount) break;
+    }
+    out.push(date);
+    if (endMode === "date" && rec.endDate && date >= rec.endDate) break;
+  }
+  return out;
+}
+
 function courseToItems(c: Course): CalendarItem[] {
-  if (!c.startDate || !c.startTime || !c.sessionCount) return [];
+  if (!c.startDate || !c.startTime) return [];
+  const dates = courseSessionDates(c);
+  if (dates.length === 0) return [];
   const items: CalendarItem[] = [];
   const times = [c.startTime, ...(c.sessionTimes ?? [])];
   const durationMin = c.sessionMinutes ?? 60;
-  for (let week = 0; week < c.sessionCount; week++) {
-    const date = addDays(c.startDate, week * 7);
+  const total = dates.length;
+  dates.forEach((date, i) => {
     for (let s = 0; s < times.length; s++) {
       const start = times[s];
       const end = addMinutesToHhmm(start, durationMin);
       items.push({
-        id: `course-${c.slug}-${week}-${s}`,
+        id: `course-${c.slug}-${i}-${s}`,
         type: "course",
         title: c.title,
         titleCn: c.titleCn,
@@ -68,13 +124,12 @@ function courseToItems(c: Course): CalendarItem[] {
         meetingUrl: c.format === "online" ? c.meetingUrl : undefined,
         meetingInstructions:
           c.format === "online" ? c.meetingInstructions : undefined,
-        sessionInfo:
-          c.sessionCount > 1 ? `Class ${week + 1} of ${c.sessionCount}` : undefined,
+        sessionInfo: total > 1 ? `Class ${i + 1} of ${total}` : undefined,
         category: c.category,
         enrollable: c.status === "open",
       });
     }
-  }
+  });
   return items;
 }
 

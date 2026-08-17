@@ -38,6 +38,40 @@ export default function CourseForm({ mode, course, action }: Props) {
     course?.format ?? "in-person"
   );
   const [imageUrl, setImageUrl] = useState(course?.imageUrl ?? "");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function handleImageUpload(
+    event: React.ChangeEvent<HTMLInputElement>
+  ): Promise<void> {
+    const file = event.target.files?.[0];
+    // Reset the input so re-selecting the same file works.
+    event.target.value = "";
+    if (!file) return;
+    setUploadError(null);
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.set("file", file);
+      const res = await fetch("/api/admin/upload", {
+        method: "POST",
+        body: fd,
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        url?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.url) {
+        setUploadError(data.error ?? "Upload failed. Please try again.");
+        return;
+      }
+      setImageUrl(data.url);
+    } catch {
+      setUploadError("Network error while uploading.");
+    } finally {
+      setUploading(false);
+    }
+  }
 
   // Live-updating schedule preview so the admin can see what the
   // auto-generated duration label will read as they type.
@@ -58,6 +92,41 @@ export default function CourseForm({ mode, course, action }: Props) {
   const [sessionTimesRaw, setSessionTimesRaw] = useState<string>(
     course?.sessionTimes?.join(", ") ?? ""
   );
+
+  // --- Google Calendar-style recurrence ---
+  const derivedInitialWeekday =
+    course?.startDate && !course?.recurrence?.weekdays?.length
+      ? [new Date(`${course.startDate}T12:00:00Z`).getUTCDay()]
+      : course?.recurrence?.weekdays ?? [];
+  const [interval, setInterval] = useState<string>(
+    String(course?.recurrence?.interval ?? 1)
+  );
+  const [weekdays, setWeekdays] = useState<number[]>(derivedInitialWeekday);
+  const [endMode, setEndMode] = useState<"count" | "date">(
+    course?.recurrence?.endMode ?? "count"
+  );
+  const [endDate, setEndDate] = useState<string>(
+    course?.recurrence?.endDate ?? ""
+  );
+  const [skipDatesRaw, setSkipDatesRaw] = useState<string>(
+    course?.skipDates?.join(", ") ?? ""
+  );
+
+  // Auto-follow startDate: when the admin picks a new first-class date and
+  // hasn't manually toggled weekdays, mirror the picker to that weekday.
+  const [manualWeekdays, setManualWeekdays] = useState<boolean>(
+    Boolean(course?.recurrence?.weekdays?.length)
+  );
+  if (
+    startDate &&
+    !manualWeekdays &&
+    weekdays.length === 1 &&
+    weekdays[0] !== new Date(`${startDate}T12:00:00Z`).getUTCDay()
+  ) {
+    // Sync in render (no effect needed) to keep the toggle in step.
+    setWeekdays([new Date(`${startDate}T12:00:00Z`).getUTCDay()]);
+  }
+
   const [duration, setDuration] = useState<string>(course?.duration ?? "");
 
   const previewDuration = formatCourseDuration({
@@ -134,15 +203,58 @@ export default function CourseForm({ mode, course, action }: Props) {
             <textarea id="longDescription" name="longDescription" required rows={6} defaultValue={course?.longDescription} className={inputCls} />
           </div>
           <div className="sm:col-span-2">
-            <label htmlFor="imageUrl" className={labelCls}>Image URL</label>
-            <input
-              id="imageUrl"
-              name="imageUrl"
-              type="url"
-              defaultValue={course?.imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className={inputCls}
-            />
+            <label htmlFor="imageUrl" className={labelCls}>Course image</label>
+            <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-stretch">
+              <input
+                id="imageUrl"
+                name="imageUrl"
+                type="text"
+                value={imageUrl}
+                onChange={(e) => setImageUrl(e.target.value)}
+                placeholder="Paste an image URL, or upload a file →"
+                className="flex-1 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700"
+              />
+              <label
+                className={`inline-flex min-h-11 shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-semibold text-stone-700 shadow-sm transition-colors hover:bg-stone-100 ${
+                  uploading ? "cursor-wait opacity-60" : ""
+                }`}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="17 8 12 3 7 8" />
+                  <line x1="12" y1="3" x2="12" y2="15" />
+                </svg>
+                {uploading ? "Uploading…" : "Upload image"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                  disabled={uploading}
+                  onChange={handleImageUpload}
+                  className="sr-only"
+                />
+              </label>
+            </div>
+            <p className="mt-1 text-xs text-stone-500">
+              Paste any public image URL, or upload a file (JPEG/PNG/WebP, up to 8 MB).
+            </p>
+            {uploadError && (
+              <p
+                role="alert"
+                className="mt-2 rounded-md border border-red-300 bg-red-50 px-3 py-2 text-xs text-red-800"
+              >
+                {uploadError}
+              </p>
+            )}
             {imageUrl && (
               <div className="mt-2 overflow-hidden rounded-md border border-stone-200 bg-stone-100">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -303,9 +415,10 @@ export default function CourseForm({ mode, course, action }: Props) {
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="text-base font-semibold text-stone-900">Schedule</h2>
         <p className="mt-1 text-xs text-stone-500">
-          Leave blank for hourly / on-demand courses. Sessions recur weekly
-          from the start date.
+          Leave blank for hourly / on-demand courses. Otherwise build the
+          repeat rule below, Google-Calendar style.
         </p>
+
         <div className="mt-4 grid gap-4 sm:grid-cols-3">
           <div>
             <label htmlFor="startDate" className={labelCls}>First class date</label>
@@ -342,21 +455,132 @@ export default function CourseForm({ mode, course, action }: Props) {
               className={inputCls}
             />
           </div>
-          <div>
-            <label htmlFor="sessionCount" className={labelCls}>Number of weeks</label>
+        </div>
+
+        <div className="mt-6 rounded-xl border border-stone-200 bg-stone-50 p-4 sm:p-5">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h3 className="text-sm font-semibold text-stone-900">Repeat</h3>
+            <p className="text-xs text-stone-500">
+              Leave counts empty for a single one-off session.
+            </p>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
+            <span className="text-stone-700">Every</span>
             <input
-              id="sessionCount"
-              name="sessionCount"
+              id="recurrenceInterval"
+              name="recurrenceInterval"
               type="number"
               min="1"
-              value={sessionCount}
-              onChange={(e) => setSessionCount(e.target.value)}
+              max="12"
+              value={interval}
+              onChange={(e) => setInterval(e.target.value)}
+              className="w-16 rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700"
+            />
+            <span className="text-stone-700">
+              {Number(interval) === 1 ? "week" : "weeks"}
+            </span>
+            <span className="text-stone-500">on</span>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {["S", "M", "T", "W", "T", "F", "S"].map((letter, idx) => {
+              const active = weekdays.includes(idx);
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  aria-pressed={active}
+                  aria-label={`Toggle ${["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][idx]}`}
+                  onClick={() => {
+                    setManualWeekdays(true);
+                    setWeekdays((prev) =>
+                      prev.includes(idx)
+                        ? prev.filter((w) => w !== idx)
+                        : [...prev, idx].sort((a, b) => a - b)
+                    );
+                  }}
+                  className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold transition-colors ${
+                    active
+                      ? "bg-stone-900 text-white shadow-sm"
+                      : "border border-stone-300 bg-white text-stone-500 hover:bg-stone-100"
+                  }`}
+                >
+                  {letter}
+                </button>
+              );
+            })}
+          </div>
+          {/* Serialize weekdays as hidden inputs so the server action can read them */}
+          {weekdays.map((w) => (
+            <input key={w} type="hidden" name="recurrenceWeekdays" value={w} />
+          ))}
+
+          <fieldset className="mt-5">
+            <legend className="text-sm font-semibold text-stone-900">Ends</legend>
+            <div className="mt-2 flex flex-col gap-2">
+              <label className="inline-flex items-center gap-3 text-sm text-stone-700">
+                <input
+                  type="radio"
+                  name="endMode"
+                  value="count"
+                  checked={endMode === "count"}
+                  onChange={() => setEndMode("count")}
+                  className="h-4 w-4 accent-stone-900"
+                />
+                <span className="whitespace-nowrap">After</span>
+                <input
+                  name="sessionCount"
+                  type="number"
+                  min="1"
+                  max="200"
+                  value={sessionCount}
+                  onChange={(e) => setSessionCount(e.target.value)}
+                  onFocus={() => setEndMode("count")}
+                  className="w-20 rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700"
+                />
+                <span className="whitespace-nowrap text-stone-500">classes</span>
+              </label>
+              <label className="inline-flex items-center gap-3 text-sm text-stone-700">
+                <input
+                  type="radio"
+                  name="endMode"
+                  value="date"
+                  checked={endMode === "date"}
+                  onChange={() => setEndMode("date")}
+                  className="h-4 w-4 accent-stone-900"
+                />
+                <span className="whitespace-nowrap">On</span>
+                <input
+                  name="recurrenceEndDate"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  onFocus={() => setEndMode("date")}
+                  className="rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700"
+                />
+              </label>
+            </div>
+          </fieldset>
+
+          <div className="mt-5">
+            <label htmlFor="skipDates" className="block text-sm font-medium text-stone-700">
+              Skip dates <span className="text-stone-400">(comma-separated YYYY-MM-DD — for holiday breaks or one-off cancellations)</span>
+            </label>
+            <input
+              id="skipDates"
+              name="skipDates"
+              type="text"
+              value={skipDatesRaw}
+              onChange={(e) => setSkipDatesRaw(e.target.value)}
+              placeholder="2026-10-13, 2026-11-27"
               className={inputCls}
             />
           </div>
-          <div className="sm:col-span-3">
-            <label htmlFor="sessionTimes" className={labelCls}>
-              Additional times same day <span className="text-stone-400">(comma-separated HH:mm — e.g. &ldquo;15:00, 17:00&rdquo; for a Sunday offered at 1/3/5 PM)</span>
+
+          <div className="mt-5">
+            <label htmlFor="sessionTimes" className="block text-sm font-medium text-stone-700">
+              Additional times same day <span className="text-stone-400">(comma-separated HH:mm — e.g. &ldquo;15:00, 17:00&rdquo;)</span>
             </label>
             <input
               id="sessionTimes"

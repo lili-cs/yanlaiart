@@ -120,6 +120,46 @@ function buildCourseFromFormData(formData: FormData, existing?: Course): Course 
     return parts.length > 0 ? parts : undefined;
   })();
 
+  // --- Google-Calendar-style recurrence ---
+  const rawInterval = optionalNumber(formData.get("recurrenceInterval"));
+  const interval = rawInterval && rawInterval > 0 ? Math.min(12, Math.floor(rawInterval)) : 1;
+  const weekdays = formData
+    .getAll("recurrenceWeekdays")
+    .map((v) => Number(String(v)))
+    .filter((n) => Number.isInteger(n) && n >= 0 && n <= 6);
+  const uniqueWeekdays = [...new Set(weekdays)].sort((a, b) => a - b);
+  const endModeRaw = String(formData.get("endMode") ?? "count");
+  const endMode: "count" | "date" = endModeRaw === "date" ? "date" : "count";
+  const recurrenceEndDate = optionalString(formData.get("recurrenceEndDate"));
+  const skipDates = (() => {
+    const raw = optionalString(formData.get("skipDates"));
+    if (!raw) return undefined;
+    const parts = raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s));
+    return parts.length > 0 ? parts : undefined;
+  })();
+
+  const recurrence: Course["recurrence"] | undefined = startDate
+    ? {
+        interval,
+        weekdays: uniqueWeekdays.length > 0 ? uniqueWeekdays : undefined,
+        endMode,
+        endDate: endMode === "date" ? recurrenceEndDate : undefined,
+      }
+    : undefined;
+
+  if (recurrence?.endMode === "date" && !recurrence.endDate) {
+    throw new Error("Please choose an end date, or switch Ends to 'After N classes'.");
+  }
+  if (recurrence?.endMode === "count" && startDate && !sessionCount) {
+    throw new Error("Please enter how many classes the series should run for.");
+  }
+  if (recurrence?.endDate && startDate && recurrence.endDate < startDate) {
+    throw new Error("End date can't be before the first class date.");
+  }
+
   const course: Course = {
     slug,
     title,
@@ -160,6 +200,8 @@ function buildCourseFromFormData(formData: FormData, existing?: Course): Course 
     startTime,
     sessionCount,
     sessionTimes,
+    recurrence,
+    skipDates,
   };
 
   return course;

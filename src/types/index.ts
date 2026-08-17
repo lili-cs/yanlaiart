@@ -42,12 +42,34 @@ export interface Course {
   startDate?: string; // YYYY-MM-DD, first class
   startTime?: string; // HH:mm (24-hour), local studio time
   /**
-   * Optional additional session start times on the same weekly day.
+   * Optional additional session start times on the same weekday.
    * Use for multi-slot days (e.g. Sunday pottery offered at 1/3/5 PM).
-   * When set, the calendar renders one item per (week × time).
+   * When set, the calendar renders one item per (date × time).
    */
   sessionTimes?: string[];
-  sessionCount?: number; // Number of weeks the course runs.
+  /**
+   * How many *dates* the course occupies. In the count end mode this is the
+   * target; in the date end mode it's ignored. Each date can still expand
+   * into multiple sessions via `sessionTimes`.
+   */
+  sessionCount?: number;
+  /**
+   * Google Calendar-style weekly recurrence rule. Optional — a bare course
+   * with just startDate/startTime/sessionCount behaves as weekly on the
+   * startDate's weekday, ending after sessionCount dates.
+   */
+  recurrence?: {
+    /** Repeat every N weeks (default 1). */
+    interval?: number;
+    /** Which weekdays the class meets on. 0 = Sun … 6 = Sat. Defaults to [dayOfWeek(startDate)]. */
+    weekdays?: number[];
+    /** How the series ends. Default "count". */
+    endMode?: "count" | "date";
+    /** When endMode === "date", the last date the series can produce. */
+    endDate?: string;
+  };
+  /** YYYY-MM-DD dates to skip (holiday breaks, cancelled single classes). */
+  skipDates?: string[];
 }
 
 export interface ArtEvent {
