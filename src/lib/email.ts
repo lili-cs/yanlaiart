@@ -144,6 +144,19 @@ function ownerReplyTo(): string | undefined {
   );
 }
 
+/** Studio owner mailbox — used for operational alerts. */
+export function ownerEmail(): string | undefined {
+  return process.env.BOOKING_TO_EMAIL ?? process.env.CONTACT_TO_EMAIL;
+}
+
+/** Tech-support mailbox — used for suspicious-activity / infra alerts. */
+export function techSupportEmail(): string {
+  return (
+    process.env.TECH_SUPPORT_EMAIL ??
+    "lili675846@gmail.com"
+  );
+}
+
 function buildJoinMeetingHtml(url: string, instructions?: string): string {
   const instructionsBlock = instructions
     ? `<div style="margin: 12px 0 0; padding-top: 12px; border-top: 1px dashed #99f6e4;">
@@ -877,3 +890,191 @@ export async function sendBookingNotificationToOwner(
     attachments: attachment ? [attachment] : undefined,
   });
 }
+
+/* ---- Operational alerts (backlog + suspicious bookings) ---- */
+
+export interface PendingBacklogAlertInput {
+  courseSlug: string;
+  courseName: string;
+  pendingCount: number;
+  recent: Array<{
+    id: string;
+    customerName: string;
+    customerEmail: string;
+    createdAt: number;
+    source: "stripe" | "free" | "demo";
+  }>;
+}
+
+function formatWhen(ms: number): string {
+  return new Date(ms).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+export async function sendPendingBacklogAlert(
+  p: PendingBacklogAlertInput
+): Promise<void> {
+  const to = ownerEmail();
+  if (!to) {
+    console.warn("Pending backlog alert skipped: owner email not configured.");
+    return;
+  }
+
+  const subject = `[yanlaiart.com] ${p.pendingCount} pending bookings for ${p.courseName}`;
+
+  const listText = p.recent
+    .map(
+      (b) =>
+        `• ${b.customerName || "(no name)"} · ${b.customerEmail} · ${formatWhen(b.createdAt)} · ${b.source}`
+    )
+    .join("\n");
+
+  const text = [
+    `Heads up — ${p.courseName} now has ${p.pendingCount} bookings sitting in pending payment.`,
+    "",
+    "That usually means one of:",
+    "• Real students who abandoned Stripe checkout — safe to ignore",
+    "• A batch of holds from someone testing the flow",
+    "• The Stripe webhook isn't delivering — nothing is being flipped to paid",
+    "",
+    "Recent pending checkouts:",
+    listText,
+    "",
+    `Review them: https://yanlaiart.com/admin/courses/${p.courseSlug}/bookings`,
+  ].join("\n");
+
+  const rowsHtml = p.recent
+    .map(
+      (b) => `
+        <tr>
+          <td style="padding: 6px 12px 6px 0; color: #292524; font-size: 13px; vertical-align: top;">${escapeHtml(b.customerName || "(no name)")}</td>
+          <td style="padding: 6px 12px 6px 0; color: #57534e; font-size: 13px; vertical-align: top;">${escapeHtml(b.customerEmail)}</td>
+          <td style="padding: 6px 12px 6px 0; color: #78716c; font-size: 12px; vertical-align: top; white-space: nowrap;">${escapeHtml(formatWhen(b.createdAt))}</td>
+          <td style="padding: 6px 0; color: #78716c; font-size: 12px; vertical-align: top;">${escapeHtml(b.source)}</td>
+        </tr>`
+    )
+    .join("");
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #292524; max-width: 600px;">
+      <div style="display: inline-block; padding: 4px 10px; background: #fef3c7; color: #92400e; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Pending backlog</div>
+      <h2 style="margin: 12px 0 4px; color: #292524; font-size: 20px;">${p.pendingCount} pending bookings for ${escapeHtml(p.courseName)}</h2>
+      <p style="margin: 0 0 16px; color: #57534e;">This usually means abandoned Stripe checkouts, someone testing the flow, or the webhook not delivering.</p>
+      <table style="border-collapse: collapse; margin: 0 0 16px; width: 100%;">
+        <thead>
+          <tr>
+            <th style="padding: 4px 12px 4px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #a8a29e; text-align: left;">Name</th>
+            <th style="padding: 4px 12px 4px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #a8a29e; text-align: left;">Email</th>
+            <th style="padding: 4px 12px 4px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #a8a29e; text-align: left;">When</th>
+            <th style="padding: 4px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #a8a29e; text-align: left;">Source</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <p style="margin: 0;">
+        <a href="https://yanlaiart.com/admin/courses/${escapeHtml(p.courseSlug)}/bookings" style="display: inline-block; padding: 10px 18px; background: #78350f; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px;">Review in admin</a>
+      </p>
+    </div>
+  `.trim();
+
+  await sendResendEmail({
+    from: fromAddress(),
+    to: [to],
+    subject,
+    html,
+    text,
+  });
+}
+
+export interface SuspiciousBurstAlertInput {
+  customerEmail: string;
+  windowMinutes: number;
+  count: number;
+  latest: Array<{
+    id: string;
+    itemSlug: string;
+    itemName: string;
+    customerName: string;
+    createdAt: number;
+    source: "stripe" | "free" | "demo";
+  }>;
+}
+
+export async function sendSuspiciousBurstAlert(
+  p: SuspiciousBurstAlertInput
+): Promise<void> {
+  const recipients = new Set<string>();
+  recipients.add(techSupportEmail());
+  const owner = ownerEmail();
+  if (owner) recipients.add(owner);
+
+  const subject = `[yanlaiart.com] ⚠ Suspicious booking burst — ${p.customerEmail}`;
+
+  const listText = p.latest
+    .map(
+      (b) =>
+        `• ${b.itemName} · ${formatWhen(b.createdAt)} · ${b.source} · ${b.customerName || "(no name)"}`
+    )
+    .join("\n");
+
+  const text = [
+    `Heads up — the email ${p.customerEmail} created ${p.count} bookings in the last ${p.windowMinutes} minutes.`,
+    "",
+    "This pattern is typical of automated abuse. Please:",
+    "• Confirm whether these bookings are legitimate",
+    "• If not, delete them from the admin panel and consider blocking the address",
+    "• Watch for other emails in the same time window",
+    "",
+    "Recent bookings from this address:",
+    listText,
+    "",
+    "Admin: https://yanlaiart.com/admin",
+  ].join("\n");
+
+  const rowsHtml = p.latest
+    .map(
+      (b) => `
+        <tr>
+          <td style="padding: 6px 12px 6px 0; color: #292524; font-size: 13px; vertical-align: top;">${escapeHtml(b.itemName)}</td>
+          <td style="padding: 6px 12px 6px 0; color: #57534e; font-size: 13px; vertical-align: top;">${escapeHtml(b.customerName || "(no name)")}</td>
+          <td style="padding: 6px 12px 6px 0; color: #78716c; font-size: 12px; vertical-align: top; white-space: nowrap;">${escapeHtml(formatWhen(b.createdAt))}</td>
+          <td style="padding: 6px 0; color: #78716c; font-size: 12px; vertical-align: top;">${escapeHtml(b.source)}</td>
+        </tr>`
+    )
+    .join("");
+
+  const html = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #292524; max-width: 600px;">
+      <div style="display: inline-block; padding: 4px 10px; background: #fee2e2; color: #991b1b; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">⚠ Suspicious activity</div>
+      <h2 style="margin: 12px 0 4px; color: #292524; font-size: 20px;">${escapeHtml(p.customerEmail)} created ${p.count} bookings in ${p.windowMinutes} minutes</h2>
+      <p style="margin: 0 0 16px; color: #57534e;">This pattern is typical of automated abuse. Review the bookings below and consider blocking the address if illegitimate.</p>
+      <table style="border-collapse: collapse; margin: 0 0 16px; width: 100%;">
+        <thead>
+          <tr>
+            <th style="padding: 4px 12px 4px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #a8a29e; text-align: left;">Course / event</th>
+            <th style="padding: 4px 12px 4px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #a8a29e; text-align: left;">Name</th>
+            <th style="padding: 4px 12px 4px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #a8a29e; text-align: left;">When</th>
+            <th style="padding: 4px 0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: #a8a29e; text-align: left;">Source</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <p style="margin: 0;">
+        <a href="https://yanlaiart.com/admin" style="display: inline-block; padding: 10px 18px; background: #991b1b; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 600; font-size: 13px;">Open admin</a>
+      </p>
+    </div>
+  `.trim();
+
+  await sendResendEmail({
+    from: fromAddress(),
+    to: Array.from(recipients),
+    subject,
+    html,
+    text,
+  });
+}
+

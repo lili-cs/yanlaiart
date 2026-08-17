@@ -33,6 +33,12 @@ export interface Course {
    * public site and calendar but still recoverable from the admin trash.
    */
   deletedAt?: number;
+  /**
+   * When true, the course is hidden from public pages (index, detail, home
+   * featured, calendar) but still visible + editable in the admin dashboard.
+   * Use this to park a course without deleting it — flip back to un-hide.
+   */
+  hidden?: boolean;
   startDate?: string; // YYYY-MM-DD, first class
   startTime?: string; // HH:mm (24-hour), local studio time
   /**

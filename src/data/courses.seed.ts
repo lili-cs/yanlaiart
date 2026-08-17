@@ -17,6 +17,7 @@ export const COURSE_SEED: Course[] = [
     "category": "drawing",
     "duration": "60 min · one-time trial",
     "featured": true,
+    "hidden": true,
     "imageUrl": "/images/free-trial-class.jpg",
     "priceUnit": "total",
     "description": "Come try the studio — one free hour, no commitment, no cost.",

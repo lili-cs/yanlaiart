@@ -12,6 +12,7 @@ import {
 } from "@/lib/email";
 import { addBooking } from "@/lib/booking-store";
 import { getBusinessHours, validateBookingSlot } from "@/lib/business-hours";
+import { checkBookingAnomalies } from "@/lib/booking-alerts";
 
 const STUDIO_ADDRESS = "Yan Lai Art Studio · Pennington, NJ 08534";
 
@@ -218,6 +219,18 @@ export async function POST(request: Request) {
       // Don't block the booking flow if email sending fails.
     }
 
+    if (itemType === "course") {
+      try {
+        await checkBookingAnomalies({
+          courseSlug: itemSlug,
+          courseName: itemName,
+          customerEmail: email,
+        });
+      } catch (err) {
+        console.error("Booking anomaly check failed", err);
+      }
+    }
+
     return NextResponse.json({
       url: `/checkout/success?session_id=${encodeURIComponent(referenceId)}`,
     });
@@ -297,6 +310,18 @@ export async function POST(request: Request) {
       });
     } catch (err) {
       console.error("Failed to persist optimistic booking", err);
+    }
+
+    if (itemType === "course") {
+      try {
+        await checkBookingAnomalies({
+          courseSlug: itemSlug,
+          courseName: itemName,
+          customerEmail: email,
+        });
+      } catch (err) {
+        console.error("Booking anomaly check failed", err);
+      }
     }
 
     return NextResponse.json({ url: session.url });
