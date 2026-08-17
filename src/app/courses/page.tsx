@@ -13,12 +13,8 @@ export const metadata: Metadata = {
 // Courses are admin-editable via Neon; always render at request time.
 export const dynamic = "force-dynamic";
 
-interface Props {
-  searchParams: Promise<{ category?: string }>;
-}
-
-export default async function CoursesPage({ searchParams }: Props) {
-  const [courses, params] = await Promise.all([getAllCourses(), searchParams]);
+export default async function CoursesPage() {
+  const courses = await getAllCourses();
 
   return (
     <>
@@ -33,7 +29,7 @@ export default async function CoursesPage({ searchParams }: Props) {
         <div className="pointer-events-none absolute -left-20 bottom-20 h-96 w-96 rounded-full bg-orange-200/30 blur-3xl" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <Suspense>
-            <CourseCatalog courses={courses} initialCategory={params.category} />
+            <CourseCatalog courses={courses} />
           </Suspense>
         </div>
       </div>

@@ -7,7 +7,6 @@ import type { Course, Category } from "@/types";
 
 interface Props {
   courses: Course[];
-  initialCategory?: string;
 }
 
 type CategoryFilter = "all" | Category;
@@ -16,28 +15,27 @@ type FormatFilter = "all" | Course["format"];
 type StatusFilter = "all" | "open" | "upcoming";
 
 const CATEGORY_OPTS: { value: CategoryFilter; label: string }[] = [
-  { value: "all", label: "Any" },
+  { value: "all", label: "All" },
   { value: "drawing", label: "Drawing" },
   { value: "painting", label: "Painting" },
   { value: "ceramic", label: "Ceramic" },
 ];
 
 const LEVEL_OPTS: { value: LevelFilter; label: string }[] = [
-  { value: "all", label: "Any" },
+  { value: "all", label: "All" },
   { value: "Beginner", label: "Beginner" },
   { value: "Intermediate", label: "Intermediate" },
   { value: "Advanced", label: "Advanced" },
-  { value: "All Levels", label: "All Levels" },
 ];
 
 const FORMAT_OPTS: { value: FormatFilter; label: string }[] = [
-  { value: "all", label: "Any" },
+  { value: "all", label: "All" },
   { value: "in-person", label: "In-person" },
   { value: "online", label: "Online" },
 ];
 
 const STATUS_OPTS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "Any" },
+  { value: "all", label: "All" },
   { value: "open", label: "Open" },
   { value: "upcoming", label: "Upcoming" },
 ];
@@ -46,41 +44,36 @@ function normalize(s: string): string {
   return s.toLowerCase().trim();
 }
 
-export default function CourseCatalog({ courses, initialCategory }: Props) {
-  const startingCategory: CategoryFilter = CATEGORY_OPTS.some(
-    (o) => o.value === initialCategory
-  )
-    ? (initialCategory as CategoryFilter)
-    : "all";
-
+export default function CourseCatalog({ courses }: Props) {
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<CategoryFilter>(startingCategory);
+  const [category, setCategory] = useState<CategoryFilter>("all");
   const [level, setLevel] = useState<LevelFilter>("all");
   const [format, setFormat] = useState<FormatFilter>("all");
   const [status, setStatus] = useState<StatusFilter>("all");
 
   const filtered = useMemo(() => {
-    const q = normalize(query);
+    const tokens = normalize(query).split(/\s+/).filter(Boolean);
     return courses.filter((c) => {
       if (c.status === "cancelled") return false;
       if (category !== "all" && c.category !== category) return false;
       if (level !== "all" && c.level !== level) return false;
       if (format !== "all" && c.format !== format) return false;
       if (status !== "all" && c.status !== status) return false;
-      if (q) {
-        const haystack = [
-          c.title,
-          c.titleCn,
-          c.description,
-          c.longDescription,
-          c.level,
-          c.category,
-        ]
-          .join(" ")
-          .toLowerCase();
-        if (!haystack.includes(q)) return false;
-      }
-      return true;
+      if (tokens.length === 0) return true;
+      const haystack = [
+        c.title,
+        c.titleCn,
+        c.description,
+        c.longDescription,
+        c.level,
+        c.category,
+        c.format,
+        c.duration,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return tokens.every((t) => haystack.includes(t));
     });
   }, [courses, query, category, level, format, status]);
 
