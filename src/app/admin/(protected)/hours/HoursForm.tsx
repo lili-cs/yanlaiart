@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { updateBusinessHoursAction, type HoursFormState } from "../actions";
-import { WEEKDAY_LABELS, type BusinessHours, type DayHours } from "@/lib/business-hours";
+import { WEEKDAY_LABELS, type BusinessHours, type DayHours } from "@/lib/business-hours-types";
 
 const initial: HoursFormState = {};
 
