@@ -78,9 +78,16 @@ function courseSessionDates(c: Course): string[] {
   const endMode = rec.endMode ?? "count";
   const targetCount = c.sessionCount ?? 0;
   const skip = new Set(c.skipDates ?? []);
+  const endDate = endMode === "date" ? rec.endDate : undefined;
+
+  // Every series needs at least one upper bound. If neither sessionCount
+  // nor endDate is set — legacy data from before the admin validation, or
+  // a half-edited row — fall back to a single occurrence instead of letting
+  // the loop produce MAX_DAYS worth of sessions.
+  if (!targetCount && !endDate) return [c.startDate];
 
   const out: string[] = [];
-  const MAX_DAYS = 365 * 3; // 3-year safety cap
+  const MAX_DAYS = 365 * 3;
   for (let offset = 0; offset < MAX_DAYS; offset++) {
     const date = addDays(c.startDate, offset);
     if (date < c.startDate) continue;
@@ -88,13 +95,15 @@ function courseSessionDates(c: Course): string[] {
     if (wk % interval !== 0) continue;
     if (!weekdays.includes(dayOfWeekUtc(date))) continue;
     if (skip.has(date)) continue;
-    if (endMode === "date") {
-      if (rec.endDate && date > rec.endDate) break;
-    } else {
-      if (targetCount && out.length >= targetCount) break;
-    }
+    // sessionCount is a hard cap in BOTH end modes — the duration label
+    // ("10 weekly classes · …") is derived from sessionCount, so the
+    // calendar must never produce more sessions than that. Prevents drift
+    // when an admin edits endDate but forgets to clear sessionCount, or
+    // vice versa.
+    if (targetCount && out.length >= targetCount) break;
+    if (endDate && date > endDate) break;
     out.push(date);
-    if (endMode === "date" && rec.endDate && date >= rec.endDate) break;
+    if (endDate && date >= endDate) break;
   }
   return out;
 }
@@ -104,7 +113,9 @@ function courseToItems(c: Course): CalendarItem[] {
   const dates = courseSessionDates(c);
   if (dates.length === 0) return [];
   const items: CalendarItem[] = [];
-  const times = [c.startTime, ...(c.sessionTimes ?? [])];
+  // Dedup: if an admin typed startTime into sessionTimes too (or repeated
+  // a slot), it should still render as one entry per date.
+  const times = [...new Set([c.startTime, ...(c.sessionTimes ?? [])])];
   const durationMin = c.sessionMinutes ?? 60;
   const total = dates.length;
   dates.forEach((date, i) => {

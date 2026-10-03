@@ -113,11 +113,27 @@ function buildCourseFromFormData(formData: FormData, existing?: Course): Course 
   const sessionTimes = (() => {
     const raw = optionalString(formData.get("sessionTimes"));
     if (!raw) return undefined;
-    const parts = raw
+    // Normalize to HH:mm, drop the primary startTime, and dedup — the
+    // calendar renders one item per (date × unique time), so a redundant
+    // entry here would silently multiply every session on the calendar.
+    const normalized = raw
       .split(",")
       .map((s) => s.trim())
-      .filter((s) => /^\d{1,2}:\d{2}$/.test(s));
-    return parts.length > 0 ? parts : undefined;
+      .filter((s) => /^\d{1,2}:\d{2}$/.test(s))
+      .map((t) => {
+        const [h, m] = t.split(":").map(Number);
+        return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      });
+    const seen = new Set<string>();
+    if (startTime) seen.add(startTime);
+    const unique: string[] = [];
+    for (const t of normalized) {
+      if (!seen.has(t)) {
+        seen.add(t);
+        unique.push(t);
+      }
+    }
+    return unique.length > 0 ? unique : undefined;
   })();
 
   // --- Google-Calendar-style recurrence ---
