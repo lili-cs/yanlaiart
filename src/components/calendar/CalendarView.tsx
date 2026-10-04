@@ -26,6 +26,10 @@ const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
   "July", "August", "September", "October", "November", "December",
 ];
+const MONTH_ABBREV = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
 
 function pad(n: number): string {
   return String(n).padStart(2, "0");
@@ -271,12 +275,18 @@ export default function CalendarView({ items }: Props) {
             const dayItems = itemsByDate.get(cell.date) ?? [];
             const shown = dayItems.slice(0, 3);
             const overflow = dayItems.length - shown.length;
+            // Month abbreviation shown next to day 1, so a boundary mid-grid
+            // is unmissable — the admin asked for a clearer distinction
+            // between the current month and the prev/next-month overflow.
+            const cellMonth0 = Number(cell.date.slice(5, 7)) - 1;
+            const showMonthLabel = cell.day === 1;
             return (
               <div
                 key={cell.date}
                 className={cn(
                   "min-h-[9rem] border-b border-r border-stone-200 p-2 last:border-r-0",
-                  !cell.inMonth && "bg-stone-50/60 text-stone-400",
+                  !cell.inMonth &&
+                    "bg-stone-100/80 text-stone-400 [background-image:repeating-linear-gradient(135deg,transparent_0_8px,rgba(120,113,108,0.06)_8px_9px)]",
                   cell.inMonth && "bg-white",
                   cell.isToday && "bg-amber-50 ring-1 ring-inset ring-amber-300"
                 )}
@@ -289,10 +299,16 @@ export default function CalendarView({ items }: Props) {
                 >
                   <span
                     className={cn(
-                      "inline-flex h-6 min-w-6 items-center justify-center rounded-full px-1",
-                      cell.isToday && "bg-amber-600 text-white"
+                      "inline-flex h-6 items-center justify-center rounded-full px-2 tabular-nums",
+                      cell.isToday && "bg-amber-600 text-white",
+                      showMonthLabel && !cell.isToday && "font-semibold text-stone-700"
                     )}
                   >
+                    {showMonthLabel && (
+                      <span className="mr-1 text-[10px] uppercase tracking-wider opacity-80">
+                        {MONTH_ABBREV[cellMonth0]}
+                      </span>
+                    )}
                     {cell.day}
                   </span>
                 </div>
