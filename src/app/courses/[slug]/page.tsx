@@ -198,74 +198,23 @@ export default async function CourseDetailPage({ params }: Props) {
                     </p>
                   </div>
 
-                  {/* Right column: everything else */}
-                  <div className="flex-1 space-y-1.5 text-sm text-stone-700 sm:border-l sm:border-amber-200/70 sm:pl-8">
-                    <p>
-                      <span className="font-semibold text-stone-900">
-                        {formatWeeklyRange(
-                          course.startDate,
-                          course.sessionCount
-                        )}
-                      </span>
+                  {/* Right column: just the date range — duration, format,
+                      and class size live in the stat cards above. */}
+                  <div className="flex-1 text-sm text-stone-700 sm:border-l sm:border-amber-200/70 sm:pl-8">
+                    <p className="font-semibold text-stone-900">
+                      {formatWeeklyRange(course.startDate, course.sessionCount)}
                     </p>
-                    <p>
-                      {course.sessionCount} week
-                      {course.sessionCount === 1 ? "" : "s"} ·{" "}
-                      {course.sessionMinutes ?? 60} min per class
-                      {course.sessionTimes?.length
-                        ? ` · ${course.sessionTimes.length + 1} slots each ${weekdayPlural(course.startDate).slice(0, -1)}`
-                        : ""}
-                    </p>
-                    {course.minStudents && (
-                      <p className="text-stone-600">
-                        Opens with {course.minStudents}+ students enrolled
-                      </p>
-                    )}
-                    {course.format === "online" ? (
-                      <p className="pt-1 text-teal-800">
-                        Online · meeting link arrives with your booking
-                      </p>
-                    ) : (
-                      <p className="pt-1 text-stone-600">
-                        In-person at the studio
-                      </p>
-                    )}
                   </div>
                 </div>
               ) : course.status === "open" ? (
                 // Open + no fixed schedule → book on demand (e.g. hourly ceramics).
-                <div className="flex flex-col gap-5 px-5 py-6 sm:flex-row sm:items-start sm:gap-8 sm:px-6">
-                  <div className="sm:min-w-[10rem]">
-                    <p className="text-2xl font-bold text-stone-900 sm:text-3xl">
-                      Book any time
-                    </p>
-                    <p className="mt-1 text-sm text-amber-900">
-                      Pick a date &amp; time when you book.
-                    </p>
-                  </div>
-                  <div className="flex-1 space-y-1.5 text-sm text-stone-700 sm:border-l sm:border-amber-200/70 sm:pl-8">
-                    <p>
-                      <span className="font-semibold text-stone-900">
-                        {course.priceUnit === "hourly"
-                          ? "Book by the hour"
-                          : `${course.sessionMinutes ?? 60}-min session`}
-                      </span>
-                    </p>
-                    {course.minStudents && (
-                      <p className="text-stone-600">
-                        Runs with {course.minStudents}+ students
-                      </p>
-                    )}
-                    {course.format === "online" ? (
-                      <p className="pt-1 text-teal-800">
-                        Online · meeting link arrives with your booking
-                      </p>
-                    ) : (
-                      <p className="pt-1 text-stone-600">
-                        In-person at the studio
-                      </p>
-                    )}
-                  </div>
+                <div className="px-5 py-6 sm:px-6">
+                  <p className="text-2xl font-bold text-stone-900 sm:text-3xl">
+                    Book any time
+                  </p>
+                  <p className="mt-1 text-sm text-amber-900">
+                    Pick a date &amp; time when you book.
+                  </p>
                 </div>
               ) : (
                 // Upcoming, not yet scheduled.
