@@ -25,10 +25,7 @@ export default async function AdminEventsPage({ searchParams }: Props) {
 
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <Link href="/admin" className="text-sm text-stone-500 hover:text-stone-800">
-            ← Courses
-          </Link>
-          <h1 className="mt-2 text-2xl font-bold text-stone-900">Events</h1>
+          <h1 className="text-2xl font-bold text-stone-900">Events</h1>
           <p className="mt-1 text-sm text-stone-600">
             {events.length} event{events.length === 1 ? "" : "s"} — holiday
             workshops, seasonal gatherings, one-off celebrations.

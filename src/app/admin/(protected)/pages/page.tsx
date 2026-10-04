@@ -30,10 +30,7 @@ export default function AdminPagesPage() {
   return (
     <div>
       <div className="mb-6">
-        <Link href="/admin" className="text-sm text-stone-500 hover:text-stone-800">
-          ← Courses
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-stone-900">Pages</h1>
+        <h1 className="text-2xl font-bold text-stone-900">Pages</h1>
         <p className="mt-1 text-sm text-stone-600">
           Edit the text content of each public page. Changes go live
           immediately — no deploy needed.
