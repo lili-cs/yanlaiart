@@ -52,7 +52,7 @@ export default function Footer() {
               <li>Pennington, NJ 08534</li>
             </ul>
           </div>
-          <div id="newsletter" className="scroll-mt-24">
+          <div>
             <h4 className="text-sm font-semibold text-gray-900">Event Notifications</h4>
             <p className="mt-2 text-sm text-gray-600">
               Subscribe to get notified about upcoming courses and events.

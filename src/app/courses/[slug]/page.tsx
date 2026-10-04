@@ -328,25 +328,6 @@ export default async function CourseDetailPage({ params }: Props) {
                     Follow us or subscribe below to be notified when this
                     course opens for enrollment.
                   </p>
-                  <Link
-                    href="#newsletter"
-                    className="mt-4 inline-flex items-center gap-1 rounded-lg bg-amber-800 px-4 py-2 text-sm font-semibold text-amber-50 shadow-sm transition-colors hover:bg-amber-900"
-                  >
-                    Subscribe
-                    <svg
-                      width="14"
-                      height="14"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden="true"
-                    >
-                      <polyline points="6 9 12 15 18 9" />
-                    </svg>
-                  </Link>
                 </div>
               )}
             </div>
