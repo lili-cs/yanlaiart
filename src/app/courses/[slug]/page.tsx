@@ -254,7 +254,7 @@ export default async function CourseDetailPage({ params }: Props) {
                     />
                     <div className="px-5 py-5 text-center">
                       <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">
-                        Meets
+                        Repeats
                       </p>
                       <p className="mt-2 text-lg font-bold text-stone-900 sm:text-xl">
                         {weekdayPlural(course.startDate!)}
