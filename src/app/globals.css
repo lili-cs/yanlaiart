@@ -139,6 +139,29 @@ body {
 .brush-stop-2 { animation: brush-stop-2 4s linear infinite; }
 .brush-stop-3 { animation: brush-stop-3 4s linear infinite; }
 
+/* Attention pulse for the newsletter block when linked to via
+   #newsletter (e.g. from a course's "Subscribe" button). Pulses three
+   times, then settles. Doesn't fire on plain page loads — the hash
+   has to match. */
+@keyframes newsletter-attention {
+  0%   { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0.55); }
+  40%  { box-shadow: 0 0 0 14px rgba(217, 119, 6, 0.08); }
+  100% { box-shadow: 0 0 0 0 rgba(217, 119, 6, 0); }
+}
+
+#newsletter:target {
+  border-radius: 0.75rem;
+  animation: newsletter-attention 1.4s ease-out 3;
+}
+
+/* Spotlight on the email input specifically — the thing we want them
+   to fill in. */
+#newsletter:target form input[type="email"] {
+  border-color: rgb(180 83 9); /* amber-700 */
+  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.35);
+  animation: newsletter-attention 1.4s ease-out 3;
+}
+
 /* Subtle paper grain texture overlay */
 .texture-paper {
   background-image:
