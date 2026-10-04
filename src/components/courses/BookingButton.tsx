@@ -24,23 +24,6 @@ interface BookingButtonProps {
   scheduledSlots?: CourseSlot[];
 }
 
-function formatSlotDate(iso: string): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function formatSlotTime(hhmm: string): string {
-  const [h, min] = hhmm.split(":").map(Number);
-  const period = h >= 12 ? "PM" : "AM";
-  const h12 = ((h + 11) % 12) + 1;
-  return `${h12}:${String(min).padStart(2, "0")} ${period}`;
-}
-
 type Status = "idle" | "submitting" | "error";
 
 export default function BookingButton({
@@ -63,22 +46,6 @@ export default function BookingButton({
   // slot's date + time anchor the booking record (matches /api/checkout).
   const anchorSlot =
     hasFixedSchedule && scheduledSlots ? scheduledSlots[0] : undefined;
-  // Which weekday + per-day time slots the course meets on — collapsed from
-  // scheduledSlots for the read-only summary.
-  const scheduleSummary = useMemo(() => {
-    if (!scheduledSlots || scheduledSlots.length === 0) return null;
-    const dayOrder = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const seenDays = new Set<number>();
-    for (const s of scheduledSlots) {
-      const d = weekdayOfLocalDate(s.date);
-      if (d >= 0) seenDays.add(d);
-    }
-    const weekdays = [...seenDays]
-      .sort((a, b) => a - b)
-      .map((d) => dayOrder[d]);
-    const times = [...new Set(scheduledSlots.map((s) => s.time))].sort();
-    return { weekdays, times };
-  }, [scheduledSlots]);
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -362,29 +329,6 @@ export default function BookingButton({
                     className="mt-1 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 sm:text-sm"
                   />
                 </div>
-
-                {itemType === "course" && hasFixedSchedule && anchorSlot && (
-                  <div className="rounded-xl border border-amber-200/70 bg-amber-50/60 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-amber-900">
-                      Course schedule
-                    </p>
-                    <p className="mt-2 text-base font-semibold text-stone-900">
-                      Starts {formatSlotDate(anchorSlot.date)}
-                    </p>
-                    {scheduleSummary && (
-                      <p className="mt-1 text-sm text-stone-700">
-                        {scheduleSummary.weekdays.join(" / ")}
-                        {" · "}
-                        {scheduleSummary.times.map(formatSlotTime).join(" / ")}
-                      </p>
-                    )}
-                    <p className="mt-1 text-xs text-stone-600">
-                      {anchorSlot.totalSessions} class
-                      {anchorSlot.totalSessions === 1 ? "" : "es"} in the
-                      series — booking covers the whole course.
-                    </p>
-                  </div>
-                )}
 
                 {itemType === "course" && !hasFixedSchedule && (
                   <div>
