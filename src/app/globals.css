@@ -139,6 +139,50 @@ body {
 .brush-stop-2 { animation: brush-stop-2 4s linear infinite; }
 .brush-stop-3 { animation: brush-stop-3 4s linear infinite; }
 
+/* Ink brush underline for nav links — the path draws itself in on hover
+   and stays drawn when the section is active, echoing the hero's ink
+   brushstroke rather than a flat gradient bar. */
+.nav-brush {
+  pointer-events: none;
+}
+.nav-brush path {
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+  transition: stroke-dashoffset 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.group:hover .nav-brush path,
+.group:focus-visible .nav-brush path,
+[aria-current="page"] .nav-brush path {
+  stroke-dashoffset: 0;
+}
+
+/* Vermilion seal mark that stamps in on the active section. "Printed",
+   not slid — brief scale + fade, like pressing a chop onto paper. */
+@keyframes seal-stamp {
+  0%   { opacity: 0; transform: scale(1.4) rotate(-8deg); }
+  70%  { opacity: 1; transform: scale(0.92) rotate(-8deg); }
+  100% { opacity: 1; transform: scale(1) rotate(-8deg); }
+}
+.nav-seal {
+  animation: seal-stamp 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Soft ink wash that blooms behind a nav link on hover — faint, so it
+   reads like watercolor rather than a button background. */
+.nav-wash {
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.6);
+  transition:
+    opacity 300ms ease-out,
+    transform 500ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.group:hover .nav-wash,
+.group:focus-visible .nav-wash {
+  opacity: 1;
+  transform: scale(1);
+}
+
 /* Subtle paper grain texture overlay */
 .texture-paper {
   background-image:

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const navLinks = [
@@ -22,8 +22,49 @@ function isActivePath(pathname: string | null, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function BrushUnderline({ gradientId }: { gradientId: string }) {
+  return (
+    <svg
+      className="nav-brush absolute -bottom-1.5 left-0 h-2 w-full"
+      viewBox="0 0 100 10"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="0" y1="0" x2="100" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#a16207" stopOpacity="0" />
+          <stop offset="15%" stopColor="#a16207" stopOpacity="1" />
+          <stop offset="55%" stopColor="#b45309" stopOpacity="1" />
+          <stop offset="85%" stopColor="#047857" stopOpacity="1" />
+          <stop offset="100%" stopColor="#047857" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* Hand-drawn curve — not a flat bar — so it reads as a brush mark */}
+      <path
+        d="M 2 6.5 C 18 3, 36 8, 52 5.5 S 82 4, 98 6"
+        stroke={`url(#${gradientId})`}
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+function Seal() {
+  // Vermilion rotated square — Chinese chop/seal mark that stamps in
+  // when the section is active.
+  return (
+    <span
+      aria-hidden="true"
+      className="nav-seal ml-2 inline-block h-2 w-2 rotate-[-8deg] rounded-[2px] bg-gradient-to-br from-red-600 to-red-800 shadow-[0_0_0_1px_rgba(185,28,28,0.25),inset_0_0_2px_rgba(0,0,0,0.4)]"
+    />
+  );
+}
+
 export default function Navbar() {
   const pathname = usePathname();
+  const gradientIdBase = useId();
   const [openedFor, setOpenedFor] = useState<string | null>(null);
   const mobileOpen = openedFor === pathname;
 
@@ -43,42 +84,34 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop nav */}
-        <ul className="hidden items-center gap-6 md:flex lg:gap-8">
-          {navLinks.map((link) => {
+        <ul className="hidden items-center gap-5 md:flex lg:gap-7">
+          {navLinks.map((link, i) => {
             const active = isActivePath(pathname, link.href);
+            const gradientId = `nav-brush-${gradientIdBase}-${i}`;
             return (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "group relative inline-flex items-center px-1 py-2 text-sm font-medium transition-colors",
+                    "group relative inline-flex items-center px-2 py-2 text-sm font-medium transition-all duration-300",
                     active
                       ? "text-amber-900"
                       : "text-stone-600 hover:text-amber-900"
                   )}
                 >
+                  {/* Watercolor wash bloom behind the label */}
+                  <span
+                    aria-hidden="true"
+                    className="nav-wash absolute inset-x-0 inset-y-1 -z-10 rounded-full bg-gradient-to-br from-amber-200/40 via-orange-100/40 to-emerald-200/30 blur-md"
+                  />
                   <span className="relative">
-                    {link.label}
-                    {/* Animated underline — slides in on hover, locked on active */}
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "pointer-events-none absolute -bottom-1 left-0 right-0 h-0.5 origin-left rounded-full bg-gradient-to-r from-amber-700 via-amber-600 to-emerald-700 transition-transform duration-300 ease-out",
-                        active
-                          ? "scale-x-100"
-                          : "scale-x-0 group-hover:scale-x-100"
-                      )}
-                    />
+                    <span className="transition-transform duration-300 ease-out group-hover:-translate-y-px inline-block">
+                      {link.label}
+                    </span>
+                    <BrushUnderline gradientId={gradientId} />
                   </span>
-                  {/* Tiny dot indicator for the active section — reads as
-                      "you are here" even if the underline is subtle. */}
-                  {active && (
-                    <span
-                      aria-hidden="true"
-                      className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-amber-600"
-                    />
-                  )}
+                  {active && <Seal />}
                 </Link>
               </li>
             );
@@ -107,8 +140,9 @@ export default function Navbar() {
       {mobileOpen && (
         <div className="border-t border-gray-200 md:hidden">
           <ul className="space-y-1 px-4 py-3">
-            {navLinks.map((link) => {
+            {navLinks.map((link, i) => {
               const active = isActivePath(pathname, link.href);
+              const gradientId = `nav-brush-m-${gradientIdBase}-${i}`;
               return (
                 <li key={link.href}>
                   <Link
@@ -116,16 +150,19 @@ export default function Navbar() {
                     aria-current={active ? "page" : undefined}
                     onClick={closeMobile}
                     className={cn(
-                      "relative block rounded-md pl-5 pr-3 py-3 text-base font-medium transition-colors",
-                      // Amber accent bar on the left — solid for active,
-                      // scales in from top on hover for inactive.
-                      "before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-1 before:rounded-full before:bg-amber-600 before:origin-top before:transition-transform before:duration-200",
+                      "group relative block overflow-hidden rounded-md pl-5 pr-3 py-3 text-base font-medium transition-colors",
+                      // Vermilion seal-stripe on the left of active items;
+                      // inactive items get a soft amber hover wash.
+                      "before:absolute before:left-1.5 before:top-2 before:bottom-2 before:w-[3px] before:rounded-full before:bg-gradient-to-b before:from-red-600 before:to-red-800 before:origin-top before:transition-transform before:duration-300",
                       active
                         ? "bg-amber-50 text-amber-900 before:scale-y-100"
                         : "text-stone-600 before:scale-y-0 hover:bg-amber-50/60 hover:text-amber-900 hover:before:scale-y-100"
                     )}
                   >
-                    {link.label}
+                    <span className="relative inline-block">
+                      {link.label}
+                      <BrushUnderline gradientId={gradientId} />
+                    </span>
                   </Link>
                 </li>
               );
