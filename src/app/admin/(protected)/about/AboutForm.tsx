@@ -2,8 +2,8 @@
 
 import { useActionState } from "react";
 import type { AboutContent } from "@/lib/page-content";
-import { updateAboutContentAction, type PageContentState } from "../../actions";
-import { SubmitButton, SaveNotice, inputCls, labelCls } from "../PageStatus";
+import { updateAboutContentAction, type PageContentState } from "../actions";
+import { SubmitButton, SaveNotice, inputCls, labelCls } from "../PageFormUI";
 
 const initial: PageContentState = {};
 

@@ -15,9 +15,7 @@ const TABS: Tab[] = [
   {
     label: "Courses",
     href: "/admin",
-    matches: (p) =>
-      p === "/admin" ||
-      p.startsWith("/admin/courses"),
+    matches: (p) => p === "/admin" || p.startsWith("/admin/courses"),
   },
   {
     label: "Events",
@@ -25,14 +23,22 @@ const TABS: Tab[] = [
     matches: (p) => p.startsWith("/admin/events"),
   },
   {
-    label: "Pages",
-    href: "/admin/pages",
-    matches: (p) => p.startsWith("/admin/pages"),
+    label: "Home",
+    href: "/admin/home",
+    matches: (p) => p.startsWith("/admin/home"),
   },
   {
-    label: "Business hours",
-    href: "/admin/hours",
-    matches: (p) => p.startsWith("/admin/hours"),
+    label: "About",
+    href: "/admin/about",
+    matches: (p) => p.startsWith("/admin/about"),
+  },
+  {
+    label: "Contact",
+    href: "/admin/contact",
+    // Business hours (moved into the Contact admin page) still exists at
+    // /admin/hours as a redirect, so match that too for the active state.
+    matches: (p) =>
+      p.startsWith("/admin/contact") || p.startsWith("/admin/hours"),
   },
 ];
 
