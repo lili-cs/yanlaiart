@@ -99,12 +99,9 @@ function enrollHref(item: CalendarItem): string {
 
 export default function CalendarView({ items }: Props) {
   const searchParams = useSearchParams();
-  // Deep-link params: `?month=YYYY-MM` jumps to that month, `?highlight=slug`
-  // rings every session for that course so the detail-page link lands you
-  // right where you want.
+  // Deep-link param: `?month=YYYY-MM` jumps to that month so a detail-page
+  // link can anchor the view on the course's first class.
   const monthParam = searchParams.get("month");
-  const initialHighlight = searchParams.get("highlight") ?? "";
-  const [highlightSlug, setHighlightSlug] = useState(initialHighlight);
 
   // Anchor the initial view on `?month=`, else today, else the first
   // upcoming item's month if today is before the first scheduled item.
@@ -133,14 +130,6 @@ export default function CalendarView({ items }: Props) {
   const [year, setYear] = useState(initial.year);
   const [month, setMonth] = useState(initial.month);
   const [filter, setFilter] = useState<Filter>("all");
-
-  const highlightTitle = useMemo(() => {
-    if (!highlightSlug) return "";
-    const match = items.find(
-      (it) => it.type === "course" && it.slug === highlightSlug
-    );
-    return match?.title ?? "";
-  }, [items, highlightSlug]);
 
   const filteredItems = useMemo(() => {
     if (filter === "all") return items;
@@ -199,21 +188,6 @@ export default function CalendarView({ items }: Props) {
 
   return (
     <div>
-      {highlightSlug && highlightTitle && (
-        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            Highlighting sessions for{" "}
-            <strong className="font-semibold">{highlightTitle}</strong>.
-          </p>
-          <button
-            type="button"
-            onClick={() => setHighlightSlug("")}
-            className="inline-flex min-h-9 items-center justify-center self-start rounded-md border border-amber-400 bg-white px-3 py-1 text-xs font-semibold text-amber-900 shadow-sm transition-colors hover:bg-amber-100 sm:self-auto"
-          >
-            Show all
-          </button>
-        </div>
-      )}
       {/* Toolbar */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-2">
@@ -356,18 +330,12 @@ export default function CalendarView({ items }: Props) {
                   {shown.map((it) => {
                     const joinable = it.isOnline && Boolean(it.meetingUrl);
                     const hasActions = joinable || it.enrollable;
-                    const isHighlighted =
-                      Boolean(highlightSlug) &&
-                      it.type === "course" &&
-                      it.slug === highlightSlug;
                     return (
                       <div
                         key={it.id}
                         className={cn(
                           "flex flex-col overflow-hidden rounded-md border text-[11px] font-medium leading-tight",
-                          itemStyle(it),
-                          isHighlighted &&
-                            "ring-2 ring-amber-500 ring-offset-1 ring-offset-white shadow-md"
+                          itemStyle(it)
                         )}
                       >
                         <Link
@@ -466,19 +434,9 @@ export default function CalendarView({ items }: Props) {
               const weekday = WEEKDAY_LABELS_LONG[d.getUTCDay()];
               const dayNum = d.getUTCDate();
               const joinable = it.isOnline && Boolean(it.meetingUrl);
-              const isHighlighted =
-                Boolean(highlightSlug) &&
-                it.type === "course" &&
-                it.slug === highlightSlug;
               return (
                 <li key={it.id}>
-                  <div
-                    className={cn(
-                      "flex items-stretch gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-50/40",
-                      isHighlighted &&
-                        "border-amber-400 ring-2 ring-amber-500/60"
-                    )}
-                  >
+                  <div className="flex items-stretch gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow-sm transition-colors hover:border-amber-300 hover:bg-amber-50/40">
                     <Link
                       href={itemHref(it)}
                       target="_blank"

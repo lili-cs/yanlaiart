@@ -223,7 +223,7 @@ export default async function CourseDetailPage({ params }: Props) {
                 </div>
                 {firstSlot && (
                   <Link
-                    href={`/calendar?month=${firstSlot.date.slice(0, 7)}&highlight=${encodeURIComponent(course.slug)}`}
+                    href={`/calendar?month=${firstSlot.date.slice(0, 7)}`}
                     className="inline-flex items-center gap-1 rounded-full border border-amber-300/80 bg-white/70 px-3 py-1 text-xs font-semibold text-amber-900 transition-colors hover:border-amber-500 hover:bg-amber-100"
                   >
                     View on calendar
