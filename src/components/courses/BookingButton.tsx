@@ -18,30 +18,27 @@ interface BookingButtonProps {
   disabled?: boolean;
   disabledMessage?: string;
   businessHours?: BusinessHours;
-  /** When present, the modal shows a date dropdown of real class sessions
-   *  (time pulled from the slot, no free-form picker). Admin-set schedule
-   *  wins over a user-typed date. */
+  /** When present, the modal shows the course's schedule read-only — the
+   *  user is booking the whole series, not individual classes, so there's
+   *  nothing to pick. First slot's date + time anchor the booking record. */
   scheduledSlots?: CourseSlot[];
 }
 
-function formatSlotLabel(slot: CourseSlot): string {
-  const [y, m, d] = slot.date.split("-").map(Number);
-  const dateObj = new Date(y, m - 1, d);
-  const [h, min] = slot.time.split(":").map(Number);
-  const period = h >= 12 ? "PM" : "AM";
-  const h12 = ((h + 11) % 12) + 1;
-  const timeStr = `${h12}:${String(min).padStart(2, "0")} ${period}`;
-  const dateStr = dateObj.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
+function formatSlotDate(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
     day: "numeric",
     year: "numeric",
   });
-  const seriesTag =
-    slot.totalSessions > 1
-      ? ` · Class ${slot.sessionIndex} of ${slot.totalSessions}`
-      : "";
-  return `${dateStr} · ${timeStr}${seriesTag}`;
+}
+
+function formatSlotTime(hhmm: string): string {
+  const [h, min] = hhmm.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = ((h + 11) % 12) + 1;
+  return `${h12}:${String(min).padStart(2, "0")} ${period}`;
 }
 
 type Status = "idle" | "submitting" | "error";
@@ -62,12 +59,26 @@ export default function BookingButton({
   const hasFixedSchedule = Boolean(
     itemType === "course" && scheduledSlots && scheduledSlots.length > 0
   );
-  // Index into scheduledSlots when the course has a fixed schedule; the
-  // first slot (next upcoming session) is pre-selected so the user can
-  // just click Continue if that works.
-  const [slotIndex, setSlotIndex] = useState(0);
-  const activeSlot =
-    hasFixedSchedule && scheduledSlots ? scheduledSlots[slotIndex] : undefined;
+  // The user is booking the whole series when a schedule exists; the first
+  // slot's date + time anchor the booking record (matches /api/checkout).
+  const anchorSlot =
+    hasFixedSchedule && scheduledSlots ? scheduledSlots[0] : undefined;
+  // Which weekday + per-day time slots the course meets on — collapsed from
+  // scheduledSlots for the read-only summary.
+  const scheduleSummary = useMemo(() => {
+    if (!scheduledSlots || scheduledSlots.length === 0) return null;
+    const dayOrder = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+    const seenDays = new Set<number>();
+    for (const s of scheduledSlots) {
+      const d = weekdayOfLocalDate(s.date);
+      if (d >= 0) seenDays.add(d);
+    }
+    const weekdays = [...seenDays]
+      .sort((a, b) => a - b)
+      .map((d) => dayOrder[d]);
+    const times = [...new Set(scheduledSlots.map((s) => s.time))].sort();
+    return { weekdays, times };
+  }, [scheduledSlots]);
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -151,14 +162,15 @@ export default function BookingButton({
     const form = event.currentTarget;
     const fd = new FormData(form);
 
-    // When the course has a fixed schedule, source date/time from the
-    // selected slot rather than the free-form fields (which aren't rendered
-    // in that path and would be empty strings).
-    const dateValue = hasFixedSchedule && activeSlot
-      ? activeSlot.date
+    // When the course has a fixed schedule the user is booking the whole
+    // series — source date/time from the first slot so the booking record
+    // and confirmation email anchor on the course start. The free-form
+    // inputs aren't rendered in that path.
+    const dateValue = hasFixedSchedule && anchorSlot
+      ? anchorSlot.date
       : String(fd.get("requestedDate") ?? "");
-    const timeValue = hasFixedSchedule && activeSlot
-      ? activeSlot.time
+    const timeValue = hasFixedSchedule && anchorSlot
+      ? anchorSlot.time
       : String(fd.get("requestedTime") ?? "");
     if (itemType === "course" && businessHours && dateValue && timeValue) {
       const weekday = weekdayOfLocalDate(dateValue);
@@ -279,7 +291,7 @@ export default function BookingButton({
               <p className="mt-1 text-sm text-stone-600">
                 {itemType === "course"
                   ? hasFixedSchedule
-                    ? "Pick which class date works for you — class time is fixed."
+                    ? "You're booking the full course — class dates and time are already set."
                     : "Pick a preferred date and time — we'll confirm by email."
                   : "Reserve your spot. Confirmation will arrive by email."}
               </p>
@@ -351,32 +363,25 @@ export default function BookingButton({
                   />
                 </div>
 
-                {itemType === "course" && hasFixedSchedule && activeSlot && (
-                  <div>
-                    <label
-                      htmlFor="booking-slot"
-                      className="block text-sm font-medium text-stone-700"
-                    >
-                      Preferred class date
-                    </label>
-                    <select
-                      id="booking-slot"
-                      value={slotIndex}
-                      onChange={(e) => setSlotIndex(Number(e.target.value))}
-                      className="mt-1 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 sm:text-sm"
-                    >
-                      {scheduledSlots!.map((s, i) => (
-                        <option key={`${s.date}-${s.time}`} value={i}>
-                          {formatSlotLabel(s)}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="mt-2 text-xs text-stone-500">
-                      Class time is fixed —{" "}
-                      <span className="font-medium text-stone-700">
-                        {formatSlotLabel(activeSlot).split(" · ").slice(0, 2).join(" · ")}
-                      </span>
-                      . Dates come from the course schedule.
+                {itemType === "course" && hasFixedSchedule && anchorSlot && (
+                  <div className="rounded-xl border border-amber-200/70 bg-amber-50/60 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-amber-900">
+                      Course schedule
+                    </p>
+                    <p className="mt-2 text-base font-semibold text-stone-900">
+                      Starts {formatSlotDate(anchorSlot.date)}
+                    </p>
+                    {scheduleSummary && (
+                      <p className="mt-1 text-sm text-stone-700">
+                        {scheduleSummary.weekdays.join(" / ")}
+                        {" · "}
+                        {scheduleSummary.times.map(formatSlotTime).join(" / ")}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-stone-600">
+                      {anchorSlot.totalSessions} class
+                      {anchorSlot.totalSessions === 1 ? "" : "es"} in the
+                      series — booking covers the whole course.
                     </p>
                   </div>
                 )}
