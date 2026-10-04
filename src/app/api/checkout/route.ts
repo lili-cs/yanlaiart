@@ -84,14 +84,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Notes are too long." }, { status: 400 });
   }
 
-  if (itemType === "course") {
-    const hours = await getBusinessHours();
-    const check = validateBookingSlot(requestedDate, requestedTime, hours);
-    if (!check.ok) {
-      return NextResponse.json({ error: check.error }, { status: 400 });
-    }
-  }
-
   let itemName: string;
   let itemDetails: string;
   let priceInCents: number;
@@ -115,6 +107,20 @@ export async function POST(request: Request) {
         { error: "This course isn't open for booking yet." },
         { status: 409 }
       );
+    }
+    // Business hours gate only on-demand bookings where the user picks the
+    // slot. A course with its own schedule has an admin-chosen time (which
+    // may legitimately sit outside the booking window, e.g. 7:30 PM for an
+    // evening online class) — the schedule wins.
+    const hasFixedSchedule = Boolean(
+      course.startDate && course.startTime && course.sessionCount
+    );
+    if (!hasFixedSchedule) {
+      const hours = await getBusinessHours();
+      const check = validateBookingSlot(requestedDate, requestedTime, hours);
+      if (!check.ok) {
+        return NextResponse.json({ error: check.error }, { status: 400 });
+      }
     }
     itemName = `${course.title} (${course.titleCn})`;
     itemDetails = [

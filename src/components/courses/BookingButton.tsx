@@ -139,7 +139,16 @@ export default function BookingButton({
     const timeValue = hasFixedSchedule && anchorSlot
       ? anchorSlot.time
       : String(fd.get("requestedTime") ?? "");
-    if (itemType === "course" && businessHours && dateValue && timeValue) {
+    // Business hours gate only on-demand bookings — a scheduled course's
+    // admin-chosen time (e.g. 7:30 PM) is allowed to sit outside the booking
+    // window. Server mirrors this check.
+    if (
+      itemType === "course" &&
+      !hasFixedSchedule &&
+      businessHours &&
+      dateValue &&
+      timeValue
+    ) {
       const weekday = weekdayOfLocalDate(dateValue);
       if (weekday >= 0) {
         const day = businessHours.days[weekday];
