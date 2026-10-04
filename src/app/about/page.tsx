@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import PageHero from "@/components/ui/PageHero";
+import { getAboutContent } from "@/lib/page-content";
 
 export const metadata: Metadata = {
   title: "About Us",
@@ -7,12 +8,20 @@ export const metadata: Metadata = {
     "In a fast-moving world, Yan Lai Art invites children — and everyone — to slow down, listen inward, and let painting and handcraft become a quiet conversation with the self.",
 };
 
-export default function AboutPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AboutPage() {
+  const content = await getAboutContent();
+  const [paragraph1, paragraph2, paragraph3] = [
+    content.paragraph1,
+    content.paragraph2,
+    content.paragraph3,
+  ];
   return (
     <>
       <PageHero
-        title="About Yan Lai Art"
-        subtitle="A quiet space to slow down, listen inward, and make"
+        title={content.heroTitle}
+        subtitle={content.heroSubtitle}
         backgroundImage="/images/temple.jpg"
         backgroundImagePosition="center 55%"
       />
@@ -50,7 +59,7 @@ export default function AboutPage() {
               }}
               className="relative mx-auto max-w-2xl text-justify text-[1.05rem] font-medium leading-[2.05] tracking-[0.04em] text-stone-900 sm:text-[1.2rem] sm:leading-[2.15] md:text-[1.35rem]"
             >
-              在信息高速发展的现在，我们更关心孩子如何与自己对话。在自然之中，在安静的环境中，慢下来，与自己的感受紧密合作。绘画和手工，是最好的体验方式。走近<span className="mx-[0.15em] font-semibold tracking-[0.14em] text-amber-800">YANLAI&nbsp;ART</span>，让这个空间滋养你的身心。
+              {content.introZh}
             </p>
 
             <div className="relative mx-auto mt-12 flex items-center justify-center gap-3">
@@ -61,36 +70,15 @@ export default function AboutPage() {
 
             <div className="relative mt-12 space-y-6 text-stone-700">
               <p className="text-lg leading-[1.9] first-letter:float-left first-letter:mr-2 first-letter:mt-1 first-letter:font-serif first-letter:text-5xl first-letter:font-semibold first-letter:leading-none first-letter:text-amber-800 sm:text-xl sm:leading-[1.9]">
-                In today&rsquo;s fast-paced, information-driven world, we
-                believe that one of the most valuable gifts we can offer
-                children is the opportunity to connect with themselves and
-                listen to their own inner voice.
+                {paragraph1}
               </p>
 
               <p className="text-base leading-[1.9] text-stone-600 sm:text-lg">
-                We believe that true growth is not only about acquiring
-                knowledge, but also about nurturing{" "}
-                <span className="font-medium text-stone-800">creativity</span>,{" "}
-                <span className="font-medium text-stone-800">mindfulness</span>,
-                and{" "}
-                <span className="font-medium text-stone-800">
-                  emotional awareness
-                </span>
-                . In a peaceful, nature-inspired environment, children are
-                encouraged to slow down, explore freely, and express
-                themselves through painting, crafts, and other forms of
-                artistic creation.
+                {paragraph2}
               </p>
 
               <p className="text-base leading-[1.9] text-stone-600 sm:text-lg">
-                At{" "}
-                <span className="font-semibold tracking-[0.12em] text-amber-800">
-                  YANLAI ART
-                </span>
-                , we strive to create a warm and inspiring space where art
-                becomes a bridge to self-discovery, imagination, and overall
-                well-being. We invite every child and family to experience the
-                joy, creativity, and nourishment that art can bring.
+                {paragraph3}
               </p>
             </div>
           </article>

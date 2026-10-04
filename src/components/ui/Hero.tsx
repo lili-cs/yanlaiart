@@ -1,6 +1,11 @@
 import Link from "next/link";
 
-export default function Hero() {
+interface HeroProps {
+  title: string;
+  subtitle: string;
+}
+
+export default function Hero({ title, subtitle }: HeroProps) {
   return (
     <section className="relative overflow-hidden bg-gradient-to-br from-stone-900 via-neutral-900 to-stone-950 py-20 sm:py-24 md:py-32">
       {/* Ghosted landscape painting — the artist's signature work as ink-wash backdrop */}
@@ -36,7 +41,7 @@ export default function Hero() {
       <div className="relative mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
         <h1 className="animate-fade-rise text-4xl font-bold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
           <span className="animate-gradient bg-gradient-to-r from-amber-100 via-stone-100 to-emerald-100 bg-clip-text text-transparent">
-            Yan Lai Art
+            {title}
           </span>
         </h1>
 
@@ -68,8 +73,7 @@ export default function Hero() {
         </svg>
 
         <p className="animate-fade-rise animation-delay-200 mx-auto mt-6 max-w-2xl text-base text-stone-300 sm:mt-8 sm:text-lg md:text-xl">
-          Discover your creative potential through drawing, painting, and ceramic art.
-          Join our welcoming community of artists and makers.
+          {subtitle}
         </p>
         <div className="animate-fade-rise animation-delay-400 mt-8 flex flex-col items-stretch justify-center gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4">
           <Link

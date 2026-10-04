@@ -40,6 +40,12 @@ export default async function ProtectedLayout({
               Events
             </Link>
             <Link
+              href="/admin/pages"
+              className="hidden text-sm text-stone-600 hover:text-stone-900 sm:inline"
+            >
+              Pages
+            </Link>
+            <Link
               href="/admin/hours"
               className="hidden text-sm text-stone-600 hover:text-stone-900 sm:inline"
             >

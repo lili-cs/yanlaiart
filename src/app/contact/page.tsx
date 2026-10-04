@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import PageHero from "@/components/ui/PageHero";
 import ContactForm from "@/components/contact/ContactForm";
+import { getContactContent } from "@/lib/page-content";
 
 export const metadata: Metadata = {
   title: "Contact Us",
@@ -8,12 +9,20 @@ export const metadata: Metadata = {
     "Get in touch with Yan Lai Art — visit our studio, send us a message, or ask about upcoming courses and events.",
 };
 
-export default function ContactPage() {
+export const dynamic = "force-dynamic";
+
+function telHref(phone: string): string {
+  const digits = phone.replace(/[^\d+]/g, "");
+  return digits ? `tel:${digits}` : "#";
+}
+
+export default async function ContactPage() {
+  const content = await getContactContent();
   return (
     <>
       <PageHero
-        title="Contact Us"
-        subtitle="We'd love to hear from you"
+        title={content.heroTitle}
+        subtitle={content.heroSubtitle}
         backgroundImage="/images/figure.jpg"
         backgroundImageStyle="showcase"
       />
@@ -50,10 +59,10 @@ export default function ContactPage() {
                   Email
                 </h3>
                 <a
-                  href="mailto:yichenhot@icloud.com"
+                  href={`mailto:${content.email}`}
                   className="mt-2 block break-all text-lg font-medium text-stone-900 hover:text-amber-900"
                 >
-                  yichenhot@icloud.com
+                  {content.email}
                 </a>
               </div>
             </div>
@@ -71,10 +80,10 @@ export default function ContactPage() {
                   Phone
                 </h3>
                 <a
-                  href="tel:+19293299686"
+                  href={telHref(content.phone)}
                   className="mt-2 block text-lg font-medium text-stone-900 hover:text-amber-900"
                 >
-                  (929) 329-9686
+                  {content.phone}
                 </a>
               </div>
             </div>
@@ -93,7 +102,7 @@ export default function ContactPage() {
                   Studio Address
                 </h3>
                 <p className="mt-2 text-lg font-medium text-stone-900">
-                  Pennington, NJ 08534
+                  {content.address}
                 </p>
               </div>
             </div>
@@ -111,18 +120,12 @@ export default function ContactPage() {
                   Studio Hours
                 </h3>
                 <dl className="mt-3 space-y-1 text-sm text-stone-700">
-              <div className="flex justify-between">
-                <dt>Monday – Friday</dt>
-                <dd>1:30 PM – 8:00 PM</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt>Saturday</dt>
-                <dd>Closed</dd>
-              </div>
-              <div className="flex justify-between">
-                <dt>Sunday</dt>
-                <dd>10:00 AM – 8:00 PM</dd>
-              </div>
+                  {content.hoursLines.map((line, i) => (
+                    <div key={i} className="flex justify-between">
+                      <dt>{line.label}</dt>
+                      <dd>{line.value}</dd>
+                    </div>
+                  ))}
                 </dl>
               </div>
             </div>
@@ -130,11 +133,8 @@ export default function ContactPage() {
         </div>
 
         <div className="rounded-2xl border border-stone-300/70 bg-stone-50/85 p-6 shadow-md shadow-stone-500/10 backdrop-blur-sm">
-          <h3 className="text-lg font-semibold text-stone-900">Send a Message</h3>
-          <p className="mt-1 text-sm text-stone-600">
-            Have a question about a course or want to book studio time? Drop us a
-            note.
-          </p>
+          <h3 className="text-lg font-semibold text-stone-900">{content.formHeading}</h3>
+          <p className="mt-1 text-sm text-stone-600">{content.formIntro}</p>
           <ContactForm />
         </div>
         </div>

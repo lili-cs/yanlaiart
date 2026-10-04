@@ -33,6 +33,13 @@ import {
   getEventBySlug,
   updateEvent,
 } from "@/lib/event-store";
+import {
+  savePageSection,
+  type AboutContent,
+  type ContactContent,
+  type HomeContent,
+  type HoursLine,
+} from "@/lib/page-content";
 import type { ArtEvent, Course, Category } from "@/types";
 
 async function requireSession(): Promise<void> {
@@ -620,4 +627,130 @@ export async function deleteEventAction(formData: FormData): Promise<void> {
   await deleteEvent(slug);
   revalidatePath("/", "layout");
   redirect(`/admin/events?deleted=${encodeURIComponent(slug)}`);
+}
+
+/* ---- Page content -------------------------------------------------- */
+
+export interface PageContentState {
+  ok?: boolean;
+  error?: string;
+}
+
+function requiredField(formData: FormData, name: string, label: string): string {
+  const v = String(formData.get(name) ?? "").trim();
+  if (!v) throw new Error(`${label} is required.`);
+  return v;
+}
+
+export async function updateHomeContentAction(
+  _prev: PageContentState,
+  formData: FormData
+): Promise<PageContentState> {
+  await requireSession();
+  try {
+    const value: HomeContent = {
+      heroTitle: requiredField(formData, "heroTitle", "Hero title"),
+      heroSubtitle: requiredField(formData, "heroSubtitle", "Hero subtitle"),
+      artFormsTitle: requiredField(
+        formData,
+        "artFormsTitle",
+        "Art forms section title"
+      ),
+      artFormsSubtitle: requiredField(
+        formData,
+        "artFormsSubtitle",
+        "Art forms section subtitle"
+      ),
+      featuredCoursesTitle: requiredField(
+        formData,
+        "featuredCoursesTitle",
+        "Featured courses title"
+      ),
+      featuredCoursesSubtitle: requiredField(
+        formData,
+        "featuredCoursesSubtitle",
+        "Featured courses subtitle"
+      ),
+      upcomingEventsTitle: requiredField(
+        formData,
+        "upcomingEventsTitle",
+        "Upcoming events title"
+      ),
+      upcomingEventsSubtitle: requiredField(
+        formData,
+        "upcomingEventsSubtitle",
+        "Upcoming events subtitle"
+      ),
+    };
+    await savePageSection("home", value);
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Failed to save page content.",
+    };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function updateAboutContentAction(
+  _prev: PageContentState,
+  formData: FormData
+): Promise<PageContentState> {
+  await requireSession();
+  try {
+    const value: AboutContent = {
+      heroTitle: requiredField(formData, "heroTitle", "Hero title"),
+      heroSubtitle: requiredField(formData, "heroSubtitle", "Hero subtitle"),
+      introZh: requiredField(formData, "introZh", "Chinese introduction"),
+      paragraph1: requiredField(formData, "paragraph1", "Paragraph 1"),
+      paragraph2: requiredField(formData, "paragraph2", "Paragraph 2"),
+      paragraph3: requiredField(formData, "paragraph3", "Paragraph 3"),
+    };
+    await savePageSection("about", value);
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Failed to save page content.",
+    };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true };
+}
+
+export async function updateContactContentAction(
+  _prev: PageContentState,
+  formData: FormData
+): Promise<PageContentState> {
+  await requireSession();
+  try {
+    const hoursLines: HoursLine[] = [];
+    const labels = formData.getAll("hoursLabel").map((v) => String(v).trim());
+    const values = formData.getAll("hoursValue").map((v) => String(v).trim());
+    for (let i = 0; i < Math.max(labels.length, values.length); i++) {
+      const label = labels[i] ?? "";
+      const value = values[i] ?? "";
+      if (!label && !value) continue;
+      if (!label || !value) {
+        throw new Error("Each studio-hours row needs both a label and a value.");
+      }
+      hoursLines.push({ label, value });
+    }
+
+    const value: ContactContent = {
+      heroTitle: requiredField(formData, "heroTitle", "Hero title"),
+      heroSubtitle: requiredField(formData, "heroSubtitle", "Hero subtitle"),
+      email: requiredField(formData, "email", "Email"),
+      phone: requiredField(formData, "phone", "Phone"),
+      address: requiredField(formData, "address", "Address"),
+      hoursLines,
+      formHeading: requiredField(formData, "formHeading", "Form heading"),
+      formIntro: requiredField(formData, "formIntro", "Form intro"),
+    };
+    await savePageSection("contact", value);
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Failed to save page content.",
+    };
+  }
+  revalidatePath("/", "layout");
+  return { ok: true };
 }

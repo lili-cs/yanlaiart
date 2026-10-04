@@ -7,6 +7,7 @@ import EventCard from "@/components/events/EventCard";
 import NewsletterSignup from "@/components/newsletter/NewsletterSignup";
 import { getFeaturedCourses } from "@/data/courses";
 import { getUpcomingEvents } from "@/data/events";
+import { getHomeContent } from "@/lib/page-content";
 import { Category } from "@/types";
 
 export const dynamic = "force-dynamic";
@@ -42,15 +43,16 @@ const categoryCards: {
 ];
 
 export default async function HomePage() {
-  const [featuredCourses, upcomingEventsAll] = await Promise.all([
+  const [featuredCourses, upcomingEventsAll, content] = await Promise.all([
     getFeaturedCourses(),
     getUpcomingEvents(),
+    getHomeContent(),
   ]);
   const upcomingEvents = upcomingEventsAll.slice(0, 3);
 
   return (
     <>
-      <Hero />
+      <Hero title={content.heroTitle} subtitle={content.heroSubtitle} />
 
       {/* Categories */}
       <section className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-12 sm:py-16 md:py-20">
@@ -58,8 +60,8 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute -right-40 bottom-20 h-[28rem] w-[28rem] rounded-full bg-emerald-200/30 blur-3xl" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading
-            title="Explore Our Art Forms"
-            subtitle="From pencil to clay, find the medium that speaks to you"
+            title={content.artFormsTitle}
+            subtitle={content.artFormsSubtitle}
           />
           <BrushDivider />
           <div className="mt-8 grid gap-4 sm:gap-6 md:grid-cols-3">
@@ -93,8 +95,8 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute left-1/3 top-1/2 h-72 w-72 rounded-full bg-emerald-200/25 blur-3xl" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading
-            title="Featured Courses"
-            subtitle="Our most popular courses hand-picked for you"
+            title={content.featuredCoursesTitle}
+            subtitle={content.featuredCoursesSubtitle}
           />
           <BrushDivider />
           <div className="mt-8 grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
@@ -119,8 +121,8 @@ export default async function HomePage() {
         <div className="pointer-events-none absolute -right-40 bottom-20 h-[28rem] w-[28rem] rounded-full bg-orange-200/30 blur-3xl" />
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <SectionHeading
-            title="Upcoming Events"
-            subtitle="Workshops, open studios, and community gatherings"
+            title={content.upcomingEventsTitle}
+            subtitle={content.upcomingEventsSubtitle}
           />
           <BrushDivider />
           <div className="mt-8 space-y-6">
