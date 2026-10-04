@@ -6,7 +6,6 @@ import { getCourseBySlug } from "@/data/courses";
 import {
   formatPrice,
   formatTimeSlot,
-  formatWeeklyRange,
   weekdayPlural,
 } from "@/lib/utils";
 import Badge from "@/components/ui/Badge";
@@ -21,6 +20,49 @@ interface Props {
 // Courses are admin-editable; render each detail page at request time so new
 // courses appear without requiring a redeploy.
 export const dynamic = "force-dynamic";
+
+const MONTH_ABBREV = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+const WEEKDAY_ABBREV = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function parseIso(iso: string): { y: number; m: number; d: number; weekday: number } {
+  const [y, m, d] = iso.split("-").map(Number);
+  // Noon-UTC avoids DST shifts around the date math.
+  const weekday = new Date(Date.UTC(y, m - 1, d, 12, 0, 0)).getUTCDay();
+  return { y, m, d, weekday };
+}
+
+function formatFullDate(iso: string): string {
+  const { y, m, d, weekday } = parseIso(iso);
+  return `${WEEKDAY_ABBREV[weekday]}, ${MONTH_ABBREV[m - 1]} ${d}, ${y}`;
+}
+
+function ScheduleTile({
+  label,
+  iso,
+}: {
+  kind: "date";
+  label: string;
+  iso: string;
+}) {
+  const { y, m, d, weekday } = parseIso(iso);
+  return (
+    <div className="px-5 py-5 text-center">
+      <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">
+        {label}
+      </p>
+      <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-amber-800">
+        {WEEKDAY_ABBREV[weekday]}
+      </p>
+      <p className="text-xl font-bold text-stone-900 tabular-nums sm:text-2xl">
+        {MONTH_ABBREV[m - 1]} {d}
+      </p>
+      <p className="text-xs text-stone-500 tabular-nums">{y}</p>
+    </div>
+  );
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
@@ -37,12 +79,13 @@ export default async function CourseDetailPage({ params }: Props) {
   const course = await getCourseBySlug(slug);
   if (!course) notFound();
   const businessHours = await getBusinessHours();
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const allSlots = courseScheduledSlots(course);
+  const firstSlot = allSlots[0];
+  const lastSlot = allSlots[allSlots.length - 1];
   // Only hand the booking modal upcoming slots — a past class date wouldn't
   // be bookable even if we offered it.
-  const todayIso = new Date().toISOString().slice(0, 10);
-  const scheduledSlots = courseScheduledSlots(course).filter(
-    (s) => s.date >= todayIso
-  );
+  const upcomingSlots = allSlots.filter((s) => s.date >= todayIso);
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-12 sm:py-16 md:py-20">
@@ -151,9 +194,11 @@ export default async function CourseDetailPage({ params }: Props) {
               </div>
             </div>
 
-            {/* Schedule — redesigned. Single source of truth for all timing info. */}
-            <div className="mt-8 overflow-hidden rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50/60 via-stone-50 to-stone-50 shadow-sm">
-              <div className="flex items-center gap-2 border-b border-amber-200/70 bg-white/60 px-5 py-3 sm:px-6">
+            {/* Schedule — Starts / Meets / Ends tiles. The schedule is the
+                most time-sensitive thing on the page, so it reads as a
+                compact ticket stub rather than a wall of prose. */}
+            <div className="mt-8 overflow-hidden rounded-2xl border border-amber-200/70 bg-gradient-to-br from-amber-50 via-stone-50 to-stone-50 shadow-sm">
+              <div className="flex items-center gap-2 border-b border-amber-200/70 bg-white/70 px-5 py-3 sm:px-6">
                 <svg
                   width="16"
                   height="16"
@@ -177,39 +222,70 @@ export default async function CourseDetailPage({ params }: Props) {
               </div>
 
               {course.status === "cancelled" ? (
-                <div className="px-5 py-6 text-sm text-stone-700 sm:px-6">
+                <div className="px-5 py-6 text-center text-sm text-stone-700 sm:px-6">
                   This course has been cancelled.
                 </div>
-              ) : course.startDate &&
-                course.startTime &&
-                course.sessionCount ? (
-                <div className="flex flex-col gap-5 px-5 py-6 sm:flex-row sm:items-start sm:gap-8 sm:px-6">
-                  {/* Prominent left column: when + time */}
-                  <div className="sm:min-w-[10rem]">
-                    <p className="text-2xl font-bold text-stone-900 sm:text-3xl">
-                      {weekdayPlural(course.startDate)}
+              ) : firstSlot && lastSlot && course.sessionCount ? (
+                course.sessionCount === 1 ? (
+                  // Single-session course — one centered tile.
+                  <div className="px-5 py-6 text-center sm:px-6">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">
+                      One-time session
                     </p>
-                    <p className="mt-1 text-base font-medium text-amber-900 tabular-nums sm:text-lg">
-                      {[course.startTime, ...(course.sessionTimes ?? [])]
+                    <p className="mt-2 text-xl font-bold text-stone-900 sm:text-2xl">
+                      {formatFullDate(firstSlot.date)}
+                    </p>
+                    <p className="mt-1 text-base font-medium text-amber-900 tabular-nums">
+                      {[firstSlot.time, ...(course.sessionTimes ?? []).filter((t) => t !== firstSlot.time)]
                         .map((t) =>
                           formatTimeSlot(t, course.sessionMinutes ?? 60)
                         )
-                        .join(course.sessionTimes?.length ? " · " : "")}
+                        .join(" · ")}
                     </p>
                   </div>
-
-                  {/* Right column: just the date range — duration, format,
-                      and class size live in the stat cards above. */}
-                  <div className="flex-1 text-sm text-stone-700 sm:border-l sm:border-amber-200/70 sm:pl-8">
-                    <p className="font-semibold text-stone-900">
-                      {formatWeeklyRange(course.startDate, course.sessionCount)}
-                    </p>
+                ) : (
+                  // Multi-session series — three stacked tiles on mobile,
+                  // Starts | Meets | Ends side-by-side on sm+.
+                  <div className="grid grid-cols-1 divide-y divide-amber-200/60 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+                    <ScheduleTile
+                      kind="date"
+                      label="Starts"
+                      iso={firstSlot.date}
+                    />
+                    <div className="px-5 py-5 text-center">
+                      <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">
+                        Meets
+                      </p>
+                      <p className="mt-2 text-lg font-bold text-stone-900 sm:text-xl">
+                        {weekdayPlural(course.startDate!)}
+                      </p>
+                      <div className="mt-1 flex flex-col items-center gap-0.5 text-sm font-medium text-amber-900 tabular-nums">
+                        {[
+                          course.startTime!,
+                          ...(course.sessionTimes ?? []).filter(
+                            (t) => t !== course.startTime
+                          ),
+                        ].map((t) => (
+                          <span key={t}>
+                            {formatTimeSlot(t, course.sessionMinutes ?? 60)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                    <ScheduleTile
+                      kind="date"
+                      label="Ends"
+                      iso={lastSlot.date}
+                    />
                   </div>
-                </div>
+                )
               ) : course.status === "open" ? (
                 // Open + no fixed schedule → book on demand (e.g. hourly ceramics).
-                <div className="px-5 py-6 sm:px-6">
-                  <p className="text-2xl font-bold text-stone-900 sm:text-3xl">
+                <div className="px-5 py-6 text-center sm:px-6">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">
+                    On demand
+                  </p>
+                  <p className="mt-2 text-xl font-bold text-stone-900 sm:text-2xl">
                     Book any time
                   </p>
                   <p className="mt-1 text-sm text-amber-900">
@@ -218,8 +294,11 @@ export default async function CourseDetailPage({ params }: Props) {
                 </div>
               ) : (
                 // Upcoming, not yet scheduled.
-                <div className="px-5 py-6 sm:px-6">
-                  <p className="text-xl font-semibold text-stone-900 sm:text-2xl">
+                <div className="px-5 py-6 text-center sm:px-6">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">
+                    Upcoming
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-stone-900 sm:text-2xl">
                     Schedule to be announced
                   </p>
                   <p className="mt-1 text-sm text-stone-600">
@@ -274,7 +353,7 @@ export default async function CourseDetailPage({ params }: Props) {
                   }
                   businessHours={businessHours}
                   scheduledSlots={
-                    scheduledSlots.length > 0 ? scheduledSlots : undefined
+                    upcomingSlots.length > 0 ? upcomingSlots : undefined
                   }
                 />
               </Suspense>
