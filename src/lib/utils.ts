@@ -6,7 +6,15 @@ export function formatPrice(cents: number): string {
 }
 
 export function formatDate(dateString: string): string {
-  return new Date(dateString).toLocaleDateString("en-US", {
+  // Treat a bare "YYYY-MM-DD" as the admin's local calendar date, not UTC
+  // midnight — otherwise `new Date("YYYY-MM-DD")` is parsed as UTC and
+  // toLocaleDateString shifts it into the server's TZ, which rolls the
+  // date back one day on anything west of UTC.
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+  const d = m
+    ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]))
+    : new Date(dateString);
+  return d.toLocaleDateString("en-US", {
     weekday: "long",
     year: "numeric",
     month: "long",
