@@ -161,6 +161,44 @@ function eventToItem(e: ArtEvent): CalendarItem {
   };
 }
 
+export interface CourseSlot {
+  /** YYYY-MM-DD, studio local date. */
+  date: string;
+  /** HH:mm (24-hour), studio local time. */
+  time: string;
+  /** 1-indexed position in the series (e.g. "Class 3 of 10"). */
+  sessionIndex: number;
+  totalSessions: number;
+  /** 1-indexed slot within a multi-slot day (1 when there's only one). */
+  slotIndex: number;
+  totalSlots: number;
+}
+
+/**
+ * Full list of (date × time) slots a course produces from its schedule.
+ * Returns [] for hourly / on-demand courses with no fixed schedule.
+ */
+export function courseScheduledSlots(c: Course): CourseSlot[] {
+  if (!c.startDate || !c.startTime) return [];
+  const dates = courseSessionDates(c);
+  if (dates.length === 0) return [];
+  const times = [...new Set([c.startTime, ...(c.sessionTimes ?? [])])];
+  const slots: CourseSlot[] = [];
+  dates.forEach((date, i) => {
+    times.forEach((time, s) => {
+      slots.push({
+        date,
+        time,
+        sessionIndex: i + 1,
+        totalSessions: dates.length,
+        slotIndex: s + 1,
+        totalSlots: times.length,
+      });
+    });
+  });
+  return slots;
+}
+
 /** All course sessions + all events, sorted by date/time. */
 export async function getAllCalendarItems(): Promise<CalendarItem[]> {
   const items: CalendarItem[] = [];

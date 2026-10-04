@@ -9,6 +9,7 @@ import {
   weekdayOfLocalDate,
   type BusinessHours,
 } from "@/lib/business-hours-types";
+import type { CourseSlot } from "@/lib/schedule";
 
 interface BookingButtonProps {
   itemType: "course" | "event";
@@ -17,6 +18,30 @@ interface BookingButtonProps {
   disabled?: boolean;
   disabledMessage?: string;
   businessHours?: BusinessHours;
+  /** When present, the modal shows a date dropdown of real class sessions
+   *  (time pulled from the slot, no free-form picker). Admin-set schedule
+   *  wins over a user-typed date. */
+  scheduledSlots?: CourseSlot[];
+}
+
+function formatSlotLabel(slot: CourseSlot): string {
+  const [y, m, d] = slot.date.split("-").map(Number);
+  const dateObj = new Date(y, m - 1, d);
+  const [h, min] = slot.time.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const h12 = ((h + 11) % 12) + 1;
+  const timeStr = `${h12}:${String(min).padStart(2, "0")} ${period}`;
+  const dateStr = dateObj.toLocaleDateString("en-US", {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  const seriesTag =
+    slot.totalSessions > 1
+      ? ` · Class ${slot.sessionIndex} of ${slot.totalSessions}`
+      : "";
+  return `${dateStr} · ${timeStr}${seriesTag}`;
 }
 
 type Status = "idle" | "submitting" | "error";
@@ -28,11 +53,21 @@ export default function BookingButton({
   disabled = false,
   disabledMessage,
   businessHours,
+  scheduledSlots,
 }: BookingButtonProps) {
   const [open, setOpen] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [pickedDate, setPickedDate] = useState("");
+  const hasFixedSchedule = Boolean(
+    itemType === "course" && scheduledSlots && scheduledSlots.length > 0
+  );
+  // Index into scheduledSlots when the course has a fixed schedule; the
+  // first slot (next upcoming session) is pre-selected so the user can
+  // just click Continue if that works.
+  const [slotIndex, setSlotIndex] = useState(0);
+  const activeSlot =
+    hasFixedSchedule && scheduledSlots ? scheduledSlots[slotIndex] : undefined;
   const firstFieldRef = useRef<HTMLInputElement | null>(null);
   const modalRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -116,8 +151,15 @@ export default function BookingButton({
     const form = event.currentTarget;
     const fd = new FormData(form);
 
-    const dateValue = String(fd.get("requestedDate") ?? "");
-    const timeValue = String(fd.get("requestedTime") ?? "");
+    // When the course has a fixed schedule, source date/time from the
+    // selected slot rather than the free-form fields (which aren't rendered
+    // in that path and would be empty strings).
+    const dateValue = hasFixedSchedule && activeSlot
+      ? activeSlot.date
+      : String(fd.get("requestedDate") ?? "");
+    const timeValue = hasFixedSchedule && activeSlot
+      ? activeSlot.time
+      : String(fd.get("requestedTime") ?? "");
     if (itemType === "course" && businessHours && dateValue && timeValue) {
       const weekday = weekdayOfLocalDate(dateValue);
       if (weekday >= 0) {
@@ -236,7 +278,9 @@ export default function BookingButton({
               </h2>
               <p className="mt-1 text-sm text-stone-600">
                 {itemType === "course"
-                  ? "Pick a preferred date and time — we'll confirm by email."
+                  ? hasFixedSchedule
+                    ? "Pick which class date works for you — class time is fixed."
+                    : "Pick a preferred date and time — we'll confirm by email."
                   : "Reserve your spot. Confirmation will arrive by email."}
               </p>
             </div>
@@ -307,7 +351,37 @@ export default function BookingButton({
                   />
                 </div>
 
-                {itemType === "course" && (
+                {itemType === "course" && hasFixedSchedule && activeSlot && (
+                  <div>
+                    <label
+                      htmlFor="booking-slot"
+                      className="block text-sm font-medium text-stone-700"
+                    >
+                      Preferred class date
+                    </label>
+                    <select
+                      id="booking-slot"
+                      value={slotIndex}
+                      onChange={(e) => setSlotIndex(Number(e.target.value))}
+                      className="mt-1 block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-base text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700 sm:text-sm"
+                    >
+                      {scheduledSlots!.map((s, i) => (
+                        <option key={`${s.date}-${s.time}`} value={i}>
+                          {formatSlotLabel(s)}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="mt-2 text-xs text-stone-500">
+                      Class time is fixed —{" "}
+                      <span className="font-medium text-stone-700">
+                        {formatSlotLabel(activeSlot).split(" · ").slice(0, 2).join(" · ")}
+                      </span>
+                      . Dates come from the course schedule.
+                    </p>
+                  </div>
+                )}
+
+                {itemType === "course" && !hasFixedSchedule && (
                   <div>
                     <div className="grid gap-4 sm:grid-cols-2">
                       <div>

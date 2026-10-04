@@ -12,6 +12,7 @@ import {
 import Badge from "@/components/ui/Badge";
 import BookingButton from "@/components/courses/BookingButton";
 import { getBusinessHours } from "@/lib/business-hours";
+import { courseScheduledSlots } from "@/lib/schedule";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -36,6 +37,12 @@ export default async function CourseDetailPage({ params }: Props) {
   const course = await getCourseBySlug(slug);
   if (!course) notFound();
   const businessHours = await getBusinessHours();
+  // Only hand the booking modal upcoming slots — a past class date wouldn't
+  // be bookable even if we offered it.
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const scheduledSlots = courseScheduledSlots(course).filter(
+    (s) => s.date >= todayIso
+  );
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-b from-stone-100 via-amber-50/40 to-stone-50 py-12 sm:py-16 md:py-20">
@@ -317,6 +324,9 @@ export default async function CourseDetailPage({ params }: Props) {
                         : undefined
                   }
                   businessHours={businessHours}
+                  scheduledSlots={
+                    scheduledSlots.length > 0 ? scheduledSlots : undefined
+                  }
                 />
               </Suspense>
             </div>
