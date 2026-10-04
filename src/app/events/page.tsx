@@ -9,8 +9,10 @@ export const metadata: Metadata = {
     "Upcoming art events, workshops, and community gatherings at Yan Lai Art.",
 };
 
-export default function EventsPage() {
-  const events = getAllEvents();
+export const dynamic = "force-dynamic";
+
+export default async function EventsPage() {
+  const events = await getAllEvents();
 
   return (
     <>

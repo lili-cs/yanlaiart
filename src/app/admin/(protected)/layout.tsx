@@ -34,6 +34,12 @@ export default async function ProtectedLayout({
               Yan Lai Art · Admin
             </Link>
             <Link
+              href="/admin/events"
+              className="hidden text-sm text-stone-600 hover:text-stone-900 sm:inline"
+            >
+              Events
+            </Link>
+            <Link
               href="/admin/hours"
               className="hidden text-sm text-stone-600 hover:text-stone-900 sm:inline"
             >

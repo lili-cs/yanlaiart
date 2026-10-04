@@ -42,8 +42,11 @@ const categoryCards: {
 ];
 
 export default async function HomePage() {
-  const featuredCourses = await getFeaturedCourses();
-  const upcomingEvents = getUpcomingEvents().slice(0, 3);
+  const [featuredCourses, upcomingEventsAll] = await Promise.all([
+    getFeaturedCourses(),
+    getUpcomingEvents(),
+  ]);
+  const upcomingEvents = upcomingEventsAll.slice(0, 3);
 
   return (
     <>

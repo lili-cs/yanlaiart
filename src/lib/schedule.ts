@@ -164,9 +164,9 @@ function eventToItem(e: ArtEvent): CalendarItem {
 /** All course sessions + all events, sorted by date/time. */
 export async function getAllCalendarItems(): Promise<CalendarItem[]> {
   const items: CalendarItem[] = [];
-  const courses = await getAllCourses();
+  const [courses, events] = await Promise.all([getAllCourses(), getAllEvents()]);
   for (const c of courses) items.push(...courseToItems(c));
-  for (const e of getAllEvents()) items.push(eventToItem(e));
+  for (const e of events) items.push(eventToItem(e));
   return items.sort((a, b) => {
     const dateCmp = a.date.localeCompare(b.date);
     if (dateCmp !== 0) return dateCmp;

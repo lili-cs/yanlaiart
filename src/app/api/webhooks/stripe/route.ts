@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
           .join(" · ");
       }
     } else {
-      const e = getEventBySlug(itemSlug);
+      const e = await getEventBySlug(itemSlug);
       if (e) {
         itemName = `${e.title} (${e.titleCn})`;
         itemDetails = `${e.date} · ${e.time} · ${e.location}`;

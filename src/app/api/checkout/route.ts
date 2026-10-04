@@ -131,7 +131,7 @@ export async function POST(request: Request) {
     itemLocation = isOnline ? undefined : STUDIO_ADDRESS;
     effectiveEndTime = addMinutesToHhmm(requestedTime, course.sessionMinutes ?? 60);
   } else {
-    const event = getEventBySlug(itemSlug);
+    const event = await getEventBySlug(itemSlug);
     if (!event) {
       return NextResponse.json({ error: "Event not found." }, { status: 404 });
     }

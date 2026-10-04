@@ -27,7 +27,13 @@ import {
   type BusinessHours,
   type DayHours,
 } from "@/lib/business-hours";
-import type { Course, Category } from "@/types";
+import {
+  createEvent,
+  deleteEvent,
+  getEventBySlug,
+  updateEvent,
+} from "@/lib/event-store";
+import type { ArtEvent, Course, Category } from "@/types";
 
 async function requireSession(): Promise<void> {
   const c = await cookies();
@@ -499,4 +505,119 @@ export async function updateBusinessHoursAction(
   }
   revalidatePath("/", "layout");
   return { ok: true };
+}
+
+/* ---- Events -------------------------------------------------------- */
+
+function eventPriceCents(dollarsStr: string): number {
+  const dollars = Number(dollarsStr);
+  if (!Number.isFinite(dollars) || dollars < 0) {
+    throw new Error("Price must be a non-negative number.");
+  }
+  return Math.round(dollars * 100);
+}
+
+function buildEventFromFormData(
+  formData: FormData,
+  existing?: ArtEvent
+): ArtEvent {
+  const title = String(formData.get("title") ?? "").trim();
+  if (!title) throw new Error("Title is required.");
+
+  const providedSlug = optionalString(formData.get("slug"));
+  const slug = existing?.slug ?? providedSlug ?? slugify(title);
+  if (!slug) throw new Error("Slug is required.");
+
+  const date = String(formData.get("date") ?? "").trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    throw new Error("Event date is required (YYYY-MM-DD).");
+  }
+
+  const time = String(formData.get("time") ?? "").trim();
+  if (!time) throw new Error("Time is required (e.g. \"2:00 PM - 5:00 PM\").");
+
+  const location = String(formData.get("location") ?? "").trim();
+  if (!location) throw new Error("Location is required.");
+
+  const price = eventPriceCents(String(formData.get("price") ?? "0"));
+  const capacity = optionalNumber(formData.get("capacity"));
+  if (!capacity || capacity < 1) throw new Error("Capacity must be at least 1.");
+
+  return {
+    slug,
+    title,
+    titleCn: String(formData.get("titleCn") ?? "").trim(),
+    description: String(formData.get("description") ?? "").trim(),
+    longDescription: String(formData.get("longDescription") ?? "").trim(),
+    price,
+    date,
+    time,
+    location,
+    imageUrl:
+      optionalString(formData.get("imageUrl")) ??
+      existing?.imageUrl ??
+      "https://placehold.co/800x500/fce7f3/9d174d?text=Event",
+    capacity,
+    meetingUrl: optionalString(formData.get("meetingUrl")),
+  };
+}
+
+export interface EventActionState {
+  error?: string;
+}
+
+export async function createEventAction(
+  _prev: EventActionState,
+  formData: FormData
+): Promise<EventActionState> {
+  await requireSession();
+  let event: ArtEvent;
+  try {
+    event = buildEventFromFormData(formData);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Invalid event." };
+  }
+  try {
+    await createEvent(event);
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Failed to create event.",
+    };
+  }
+  revalidatePath("/", "layout");
+  redirect(`/admin/events/${event.slug}/edit?saved=1`);
+}
+
+export async function updateEventAction(
+  slug: string,
+  _prev: EventActionState,
+  formData: FormData
+): Promise<EventActionState> {
+  await requireSession();
+  const existing = await getEventBySlug(slug);
+  if (!existing) return { error: "Event not found." };
+  let next: ArtEvent;
+  try {
+    next = buildEventFromFormData(formData, existing);
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Invalid event." };
+  }
+  try {
+    await updateEvent(slug, next);
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Failed to update event.",
+    };
+  }
+  revalidatePath("/", "layout");
+  redirect(`/admin/events/${slug}/edit?saved=1`);
+}
+
+export async function deleteEventAction(formData: FormData): Promise<void> {
+  await requireSession();
+  const slug = String(formData.get("slug") ?? "");
+  if (!slug) redirect("/admin/events");
+  await deleteEvent(slug);
+  revalidatePath("/", "layout");
+  redirect(`/admin/events?deleted=${encodeURIComponent(slug)}`);
 }
