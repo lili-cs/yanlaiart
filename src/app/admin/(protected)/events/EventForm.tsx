@@ -48,6 +48,7 @@ export default function EventForm({ mode, event, action }: Props) {
     try {
       const fd = new FormData();
       fd.set("file", file);
+      fd.set("kind", "event");
       const res = await fetch("/api/admin/upload", {
         method: "POST",
         body: fd,

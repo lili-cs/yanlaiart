@@ -64,13 +64,18 @@ export async function POST(request: Request) {
     );
   }
 
+  // Optional "kind" from the client picks the top-level folder on Blob.
+  // Falls back to courses/ for backward compat with older callers.
+  const kindRaw = String(form.get("kind") ?? "").trim();
+  const folder = kindRaw === "event" ? "events" : "courses";
+
   const originalName = file.name || "upload";
   const dot = originalName.lastIndexOf(".");
   const stem = dot > 0 ? originalName.slice(0, dot) : originalName;
   const ext = dot > 0 ? originalName.slice(dot + 1) : "";
   const safeStem = slugify(stem) || "image";
   const safeExt = slugify(ext).slice(0, 5);
-  const pathname = `courses/${Date.now()}-${safeStem}${safeExt ? `.${safeExt}` : ""}`;
+  const pathname = `${folder}/${Date.now()}-${safeStem}${safeExt ? `.${safeExt}` : ""}`;
 
   try {
     const blob = await put(pathname, file, {

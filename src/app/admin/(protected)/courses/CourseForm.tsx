@@ -53,6 +53,7 @@ export default function CourseForm({ mode, course, action }: Props) {
     try {
       const fd = new FormData();
       fd.set("file", file);
+      fd.set("kind", "course");
       const res = await fetch("/api/admin/upload", {
         method: "POST",
         body: fd,
