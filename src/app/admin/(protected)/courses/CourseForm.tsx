@@ -129,7 +129,10 @@ export default function CourseForm({ mode, course, action }: Props) {
   }
 
   const [duration, setDuration] = useState<string>(course?.duration ?? "");
-
+  // Two modes: "auto" lets the schedule generate the label, "custom" uses
+  // whatever the admin types. Default to "custom" only if the stored
+  // duration doesn't match what auto would produce — i.e. the admin
+  // genuinely overrode it before.
   const previewDuration = formatCourseDuration({
     priceUnit,
     status,
@@ -143,12 +146,19 @@ export default function CourseForm({ mode, course, action }: Props) {
       : undefined,
     startDate: startDate || undefined,
   });
-  // If the admin typed something that doesn't match what the schedule would
-  // derive, flag it — they may have intentionally overridden, or they may
-  // have forgotten to update the label after editing dates.
-  const durationTrimmed = duration.trim();
-  const durationMismatch =
-    durationTrimmed.length > 0 && durationTrimmed !== previewDuration;
+  const [durationMode, setDurationMode] = useState<"auto" | "custom">(() => {
+    if (!course?.duration) return "auto";
+    return course.duration.trim() === previewDuration ? "auto" : "custom";
+  });
+
+  const DURATION_PRESETS = [
+    "6 weekly classes · 1 hour each",
+    "8 weekly classes · 1 hour each",
+    "10 weekly classes · 1 hour each",
+    "One-time session",
+    "Book by the hour",
+    "Schedule to be announced",
+  ];
 
   const priceDollars = course ? (course.price / 100).toFixed(2) : "";
 
@@ -337,40 +347,87 @@ export default function CourseForm({ mode, course, action }: Props) {
             <input id="minStudents" name="minStudents" type="number" min="1" defaultValue={course?.minStudents ?? ""} className={inputCls} />
           </div>
           <div className="sm:col-span-2">
-            <label htmlFor="duration" className={labelCls}>
-              Duration label <span className="text-stone-400">(what shows on the course card &amp; page)</span>
+            <label className={labelCls}>
+              Duration label{" "}
+              <span className="text-stone-400">
+                (the short line on the course card &amp; page — &ldquo;8 weekly classes · 1 hour each&rdquo;)
+              </span>
             </label>
-            <input
-              id="duration"
-              name="duration"
-              type="text"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              placeholder={previewDuration || "Leave blank to auto-generate from schedule"}
-              className={inputCls}
-            />
-            <div className="mt-1 flex flex-col gap-1 text-xs">
-              {durationTrimmed.length === 0 ? (
-                <p className="text-stone-500">
-                  Empty → auto-generates as{" "}
-                  <span className="font-medium text-stone-700">
-                    {previewDuration || "(nothing to derive from schedule)"}
+            <fieldset className="mt-2 space-y-2">
+              <label className="flex cursor-pointer items-start gap-3 rounded-md border border-stone-200 bg-white p-3 hover:border-amber-400">
+                <input
+                  type="radio"
+                  name="durationMode"
+                  value="auto"
+                  checked={durationMode === "auto"}
+                  onChange={() => setDurationMode("auto")}
+                  className="mt-0.5 h-4 w-4 accent-amber-700"
+                />
+                <span className="flex-1 text-sm">
+                  <span className="font-medium text-stone-900">
+                    Auto from schedule
                   </span>
-                </p>
-              ) : durationMismatch ? (
-                <p className="rounded-md border border-amber-300 bg-amber-50 px-2 py-1.5 text-amber-900">
-                  <span className="font-semibold">Doesn&apos;t match your schedule.</span>{" "}
-                  Based on the fields below, this course would auto-read as{" "}
-                  <span className="font-medium">{previewDuration}</span>. Your
-                  custom text will be shown instead — clear the field to
-                  revert to the auto value.
-                </p>
-              ) : (
-                <p className="text-emerald-700">
-                  ✓ Matches the schedule below.
-                </p>
-              )}
-            </div>
+                  <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-800">
+                    Recommended
+                  </span>
+                  <span className="mt-1 block text-xs text-stone-600">
+                    Reads as:{" "}
+                    <span className="font-medium text-stone-900">
+                      {previewDuration || "(fill in the Schedule section below first)"}
+                    </span>
+                  </span>
+                </span>
+              </label>
+              <label className="flex cursor-pointer items-start gap-3 rounded-md border border-stone-200 bg-white p-3 hover:border-amber-400">
+                <input
+                  type="radio"
+                  name="durationMode"
+                  value="custom"
+                  checked={durationMode === "custom"}
+                  onChange={() => setDurationMode("custom")}
+                  className="mt-0.5 h-4 w-4 accent-amber-700"
+                />
+                <span className="flex-1 text-sm">
+                  <span className="font-medium text-stone-900">Custom text</span>
+                  <span className="mt-1 block text-xs text-stone-600">
+                    Override the auto label with your own wording.
+                  </span>
+                </span>
+              </label>
+            </fieldset>
+            {durationMode === "custom" && (
+              <div className="mt-3 space-y-2">
+                <input
+                  id="duration"
+                  name="duration"
+                  type="text"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  placeholder="e.g. 8 weekly classes · 1 hour each"
+                  className={inputCls}
+                />
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="self-center text-xs text-stone-500">
+                    Quick picks:
+                  </span>
+                  {DURATION_PRESETS.map((p) => (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => setDuration(p)}
+                      className="rounded-full border border-stone-300 bg-white px-3 py-1 text-xs text-stone-700 transition-colors hover:border-amber-400 hover:bg-amber-50"
+                    >
+                      {p}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {/* Hidden input ensures auto-mode saves an empty duration string
+                so formatCourseDuration takes over in the course store. */}
+            {durationMode === "auto" && (
+              <input type="hidden" name="duration" value="" />
+            )}
           </div>
           {format === "online" && (
             <>
@@ -607,9 +664,9 @@ export default function CourseForm({ mode, course, action }: Props) {
             {previewDuration}
           </p>
           <p className="mt-1 text-xs text-stone-500">
-            This is what the Duration label defaults to when left blank. Set a
-            custom value in the &ldquo;Duration label&rdquo; field above to
-            override it (a warning will show if the two disagree).
+            This is the string the &ldquo;Auto from schedule&rdquo; duration
+            option in Format &amp; booking will show. Change the schedule
+            fields here to update it.
           </p>
         </div>
       </section>
