@@ -81,7 +81,7 @@ export default async function EditCoursePage({ params, searchParams }: Props) {
             rel="noopener noreferrer"
             className="inline-flex min-h-10 items-center justify-center rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm font-medium text-stone-700 hover:bg-stone-100"
           >
-            Preview page ↗
+            View page ↗
           </a>
           <Link
             href={`/admin/courses/${slug}/bookings`}

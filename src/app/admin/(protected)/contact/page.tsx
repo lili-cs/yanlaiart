@@ -20,7 +20,7 @@ export default async function EditContactPage() {
           Hero, contact details, studio hours, the message-form heading, and
           the hours bookings may fall within.{" "}
           <a href="/contact" target="_blank" rel="noopener noreferrer" className="underline hover:text-stone-800">
-            Preview page ↗
+            View page ↗
           </a>
         </p>
       </div>

@@ -14,7 +14,7 @@ export default async function EditAboutPage() {
         <p className="mt-1 text-sm text-stone-600">
           Hero plus the Chinese intro and three English paragraphs.{" "}
           <a href="/about" target="_blank" rel="noopener noreferrer" className="underline hover:text-stone-800">
-            Preview page ↗
+            View page ↗
           </a>
         </p>
       </div>
