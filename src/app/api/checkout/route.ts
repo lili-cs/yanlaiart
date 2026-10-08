@@ -118,7 +118,9 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: check.error }, { status: 400 });
       }
     }
-    itemName = `${course.title} (${course.titleCn})`;
+    itemName = course.titleCn
+      ? `${course.title} (${course.titleCn})`
+      : course.title;
     itemDetails = [
       course.duration,
       course.level,
@@ -146,7 +148,9 @@ export async function POST(request: Request) {
     if (!event) {
       return NextResponse.json({ error: "Event not found." }, { status: 404 });
     }
-    itemName = `${event.title} (${event.titleCn})`;
+    itemName = event.titleCn
+      ? `${event.title} (${event.titleCn})`
+      : event.title;
     itemDetails = `${event.date} · ${event.time} · ${event.location}`;
     priceInCents = event.price;
     meetingUrl = event.meetingUrl;

@@ -71,7 +71,7 @@ export async function POST(request: NextRequest) {
     if (itemType === "course") {
       const c = await getCourseBySlug(itemSlug);
       if (c) {
-        itemName = `${c.title} (${c.titleCn})`;
+        itemName = c.titleCn ? `${c.title} (${c.titleCn})` : c.title;
         itemDetails = [
           c.duration,
           c.level,
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     } else {
       const e = await getEventBySlug(itemSlug);
       if (e) {
-        itemName = `${e.title} (${e.titleCn})`;
+        itemName = e.titleCn ? `${e.title} (${e.titleCn})` : e.title;
         itemDetails = `${e.date} · ${e.time} · ${e.location}`;
       }
     }
