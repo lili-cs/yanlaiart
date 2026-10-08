@@ -120,9 +120,48 @@ function buildCourseFromFormData(formData: FormData, existing?: Course): Course 
   const price = coursePriceCents(priceInput);
 
   const sessionMinutes = optionalNumber(formData.get("sessionMinutes"));
-  const startDate = optionalString(formData.get("startDate"));
-  const startTime = optionalString(formData.get("startTime"));
-  const sessionCount = optionalNumber(formData.get("sessionCount"));
+  const scheduleMode = String(formData.get("scheduleMode") ?? "weekly") === "custom"
+    ? "custom"
+    : "weekly";
+
+  // Custom-dates path: admin listed each class date + time individually.
+  // We pair them positionally (customDate[i] ↔ customTime[i]) and drop any
+  // malformed row so one bad entry doesn't torpedo the whole save.
+  const customDates = (() => {
+    if (scheduleMode !== "custom") return undefined;
+    const dates = formData.getAll("customDate").map((v) => String(v).trim());
+    const times = formData.getAll("customTime").map((v) => String(v).trim());
+    const paired: Array<{ date: string; time: string }> = [];
+    for (let i = 0; i < Math.max(dates.length, times.length); i++) {
+      const d = dates[i] ?? "";
+      const t = times[i] ?? "";
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d) && /^\d{1,2}:\d{2}$/.test(t)) {
+        const [h, m] = t.split(":").map(Number);
+        const tt = `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+        paired.push({ date: d, time: tt });
+      }
+    }
+    paired.sort((a, b) =>
+      a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)
+    );
+    return paired.length > 0 ? paired : undefined;
+  })();
+
+  // In custom mode, the "canonical" startDate/startTime/sessionCount are
+  // derived from the first entry and the list length so downstream code
+  // (duration label, booking anchor, etc.) still has something to read.
+  const startDate =
+    scheduleMode === "custom" && customDates
+      ? customDates[0].date
+      : optionalString(formData.get("startDate"));
+  const startTime =
+    scheduleMode === "custom" && customDates
+      ? customDates[0].time
+      : optionalString(formData.get("startTime"));
+  const sessionCount =
+    scheduleMode === "custom" && customDates
+      ? customDates.length
+      : optionalNumber(formData.get("sessionCount"));
   const sessionTimes = (() => {
     const raw = optionalString(formData.get("sessionTimes"));
     if (!raw) return undefined;
@@ -170,14 +209,17 @@ function buildCourseFromFormData(formData: FormData, existing?: Course): Course 
     return parts.length > 0 ? parts : undefined;
   })();
 
-  const recurrence: Course["recurrence"] | undefined = startDate
-    ? {
-        interval,
-        weekdays: uniqueWeekdays.length > 0 ? uniqueWeekdays : undefined,
-        endMode,
-        endDate: endMode === "date" ? recurrenceEndDate : undefined,
-      }
-    : undefined;
+  // Only emit a recurrence rule in weekly mode; custom-dates courses have
+  // their own authoritative list and don't want a rule drifting alongside.
+  const recurrence: Course["recurrence"] | undefined =
+    scheduleMode === "weekly" && startDate
+      ? {
+          interval,
+          weekdays: uniqueWeekdays.length > 0 ? uniqueWeekdays : undefined,
+          endMode,
+          endDate: endMode === "date" ? recurrenceEndDate : undefined,
+        }
+      : undefined;
 
   if (recurrence?.endMode === "date" && !recurrence.endDate) {
     throw new Error("Please choose an end date, or switch Ends to 'After N classes'.");
@@ -187,6 +229,38 @@ function buildCourseFromFormData(formData: FormData, existing?: Course): Course 
   }
   if (recurrence?.endDate && startDate && recurrence.endDate < startDate) {
     throw new Error("End date can't be before the first class date.");
+  }
+  // Weekly mode: the first class date must fall on a day the course meets,
+  // otherwise the scheduler silently skips startDate and Class 1 lands on
+  // the next matching weekday — which almost always means the admin made
+  // a mistake in one of the two fields.
+  if (
+    scheduleMode === "weekly" &&
+    startDate &&
+    recurrence?.weekdays &&
+    recurrence.weekdays.length > 0
+  ) {
+    const WEEKDAY_NAMES = [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday",
+    ];
+    const startWeekday = new Date(`${startDate}T12:00:00Z`).getUTCDay();
+    if (!recurrence.weekdays.includes(startWeekday)) {
+      const picked = recurrence.weekdays
+        .map((w) => WEEKDAY_NAMES[w])
+        .join(" / ");
+      throw new Error(
+        `First class date (${startDate}) is a ${WEEKDAY_NAMES[startWeekday]}, but Repeats on is set to ${picked}. Pick a startDate on one of those days, or add ${WEEKDAY_NAMES[startWeekday]} to Repeats on.`
+      );
+    }
+  }
+  if (scheduleMode === "custom" && !customDates) {
+    throw new Error("Add at least one class date and time, or switch to Weekly mode.");
   }
 
   const course: Course = {
@@ -228,9 +302,10 @@ function buildCourseFromFormData(formData: FormData, existing?: Course): Course 
     startDate,
     startTime,
     sessionCount,
-    sessionTimes,
+    sessionTimes: scheduleMode === "weekly" ? sessionTimes : undefined,
     recurrence,
-    skipDates,
+    skipDates: scheduleMode === "weekly" ? skipDates : undefined,
+    customDates,
   };
 
   return course;

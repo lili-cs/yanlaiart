@@ -62,12 +62,27 @@ function weekOffsetSunday(dateIso: string, anchorIso: string): number {
   );
 }
 
+/** Normalized (date, time) pair for a custom-dates course, sorted asc. */
+function sortedCustomDates(
+  c: Course
+): Array<{ date: string; time: string }> {
+  const list = (c.customDates ?? []).filter(
+    (p) =>
+      /^\d{4}-\d{2}-\d{2}$/.test(p.date) && /^\d{1,2}:\d{2}$/.test(p.time)
+  );
+  return [...list].sort((a, b) =>
+    a.date === b.date ? a.time.localeCompare(b.time) : a.date.localeCompare(b.date)
+  );
+}
+
 /**
- * Compute the list of session dates a course produces from its recurrence
- * rule. Backward compatible: a course without `recurrence` behaves as
- * weekly-on-startDate-weekday for `sessionCount` occurrences.
+ * Compute the list of session dates a course produces. If the admin
+ * entered dates manually (customDates), those win. Otherwise fall back
+ * to the weekly recurrence rule for `sessionCount` occurrences.
  */
 function courseSessionDates(c: Course): string[] {
+  const custom = sortedCustomDates(c);
+  if (custom.length > 0) return custom.map((p) => p.date);
   if (!c.startDate) return [];
   const rec = c.recurrence ?? {};
   const interval = Math.max(1, rec.interval ?? 1);
@@ -109,6 +124,34 @@ function courseSessionDates(c: Course): string[] {
 }
 
 function courseToItems(c: Course): CalendarItem[] {
+  const durationMin = c.sessionMinutes ?? 60;
+  const isOnline = c.format === "online";
+  const meetingUrl = isOnline ? c.meetingUrl : undefined;
+  const meetingInstructions = isOnline ? c.meetingInstructions : undefined;
+
+  // Custom-dates path: each entry carries its own date + time, so the
+  // weekly slot expansion doesn't apply.
+  const custom = sortedCustomDates(c);
+  if (custom.length > 0) {
+    const total = custom.length;
+    return custom.map((p, i) => ({
+      id: `course-${c.slug}-${i}-0`,
+      type: "course" as const,
+      title: c.title,
+      titleCn: c.titleCn,
+      slug: c.slug,
+      date: p.date,
+      startTime: p.time,
+      endTime: addMinutesToHhmm(p.time, durationMin),
+      isOnline,
+      meetingUrl,
+      meetingInstructions,
+      sessionInfo: total > 1 ? `Class ${i + 1} of ${total}` : undefined,
+      category: c.category,
+      enrollable: c.status === "open",
+    }));
+  }
+
   if (!c.startDate || !c.startTime) return [];
   const dates = courseSessionDates(c);
   if (dates.length === 0) return [];
@@ -116,7 +159,6 @@ function courseToItems(c: Course): CalendarItem[] {
   // Dedup: if an admin typed startTime into sessionTimes too (or repeated
   // a slot), it should still render as one entry per date.
   const times = [...new Set([c.startTime, ...(c.sessionTimes ?? [])])];
-  const durationMin = c.sessionMinutes ?? 60;
   const total = dates.length;
   dates.forEach((date, i) => {
     for (let s = 0; s < times.length; s++) {
@@ -131,10 +173,9 @@ function courseToItems(c: Course): CalendarItem[] {
         date,
         startTime: start,
         endTime: end,
-        isOnline: c.format === "online",
-        meetingUrl: c.format === "online" ? c.meetingUrl : undefined,
-        meetingInstructions:
-          c.format === "online" ? c.meetingInstructions : undefined,
+        isOnline,
+        meetingUrl,
+        meetingInstructions,
         sessionInfo: total > 1 ? `Class ${i + 1} of ${total}` : undefined,
         category: c.category,
         enrollable: c.status === "open",
@@ -179,6 +220,17 @@ export interface CourseSlot {
  * Returns [] for hourly / on-demand courses with no fixed schedule.
  */
 export function courseScheduledSlots(c: Course): CourseSlot[] {
+  const custom = sortedCustomDates(c);
+  if (custom.length > 0) {
+    return custom.map((p, i) => ({
+      date: p.date,
+      time: p.time,
+      sessionIndex: i + 1,
+      totalSessions: custom.length,
+      slotIndex: 1,
+      totalSlots: 1,
+    }));
+  }
   if (!c.startDate || !c.startTime) return [];
   const dates = courseSessionDates(c);
   if (dates.length === 0) return [];

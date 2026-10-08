@@ -112,6 +112,47 @@ export default function CourseForm({ mode, course, action }: Props) {
   const [skipDatesRaw, setSkipDatesRaw] = useState<string>(
     course?.skipDates?.join(", ") ?? ""
   );
+  // Pick-each-class mode: list of (date, time) rows. Starts populated from
+  // course.customDates if the admin stored any; otherwise one blank row so
+  // the UI isn't empty when the admin flips modes.
+  const [scheduleMode, setScheduleMode] = useState<"weekly" | "custom">(() =>
+    course?.customDates && course.customDates.length > 0 ? "custom" : "weekly"
+  );
+  const [customDates, setCustomDates] = useState<Array<{ date: string; time: string }>>(
+    () => course?.customDates && course.customDates.length > 0
+      ? course.customDates.map((p) => ({ date: p.date, time: p.time }))
+      : [{ date: "", time: "" }]
+  );
+
+  function updateCustomRow(i: number, patch: Partial<{ date: string; time: string }>) {
+    setCustomDates((prev) => prev.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  }
+  function addCustomRow() {
+    setCustomDates((prev) => {
+      // Pre-fill next row's time with the previous row's time — matches
+      // the common case where every class is at the same hour.
+      const last = prev[prev.length - 1];
+      return [...prev, { date: "", time: last?.time ?? "" }];
+    });
+  }
+  function removeCustomRow(i: number) {
+    setCustomDates((prev) =>
+      prev.length <= 1 ? [{ date: "", time: "" }] : prev.filter((_, idx) => idx !== i)
+    );
+  }
+  const validCustomCount = customDates.filter(
+    (r) => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && /^\d{1,2}:\d{2}$/.test(r.time)
+  ).length;
+
+  // Keep sessionCount in sync with the custom list length so the duration
+  // label + booking count stay honest when the admin is in custom mode.
+  // Compute the exact target string once so the comparison and the setter
+  // use the same value — otherwise the setter triggers a re-render that
+  // trips the check again (infinite loop).
+  const targetSessionCount = validCustomCount ? String(validCustomCount) : "";
+  if (scheduleMode === "custom" && targetSessionCount !== sessionCount) {
+    setSessionCount(targetSessionCount);
+  }
 
   // Auto-follow startDate: when the admin picks a new first-class date and
   // hasn't manually toggled weekdays, mirror the picker to that weekday.
@@ -127,6 +168,33 @@ export default function CourseForm({ mode, course, action }: Props) {
     // Sync in render (no effect needed) to keep the toggle in step.
     setWeekdays([new Date(`${startDate}T12:00:00Z`).getUTCDay()]);
   }
+
+  // Mismatch guard: in Weekly mode the First class date's weekday must be
+  // one of the Repeats-on days, otherwise the scheduler skips startDate and
+  // "Class 1" lands on the next matching weekday — breaking the admin's
+  // intent. Compute both the mismatch and the actual weekday name so the
+  // warning can tell the admin exactly what to fix.
+  const WEEKDAY_NAMES_LONG = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
+  const startDateWeekday =
+    startDate && /^\d{4}-\d{2}-\d{2}$/.test(startDate)
+      ? new Date(`${startDate}T12:00:00Z`).getUTCDay()
+      : null;
+  const weekdayMismatch =
+    scheduleMode === "weekly" &&
+    startDateWeekday !== null &&
+    weekdays.length > 0 &&
+    !weekdays.includes(startDateWeekday);
+  const selectedWeekdayLabels = weekdays
+    .map((w) => WEEKDAY_NAMES_LONG[w])
+    .filter((w) => Boolean(w));
 
   // Common per-class durations; "Other" opens a free-form minutes input
   // for an unusual length (e.g. 50 min).
@@ -421,26 +489,31 @@ export default function CourseForm({ mode, course, action }: Props) {
                   value={sessionCount}
                   onChange={(e) => setSessionCount(e.target.value)}
                   placeholder="e.g. 8"
-                  className={inputCls}
+                  readOnly={scheduleMode === "custom"}
+                  className={`${inputCls} ${scheduleMode === "custom" ? "bg-stone-100 cursor-not-allowed text-stone-500" : ""}`}
                 />
-                <div className="mt-2 flex flex-wrap gap-1.5">
-                  {CLASS_COUNT_PRESETS.map((n) => (
-                    <button
-                      key={n}
-                      type="button"
-                      onClick={() => setSessionCount(String(n))}
-                      className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
-                        Number(sessionCount) === n
-                          ? "border-amber-500 bg-amber-100 text-amber-900"
-                          : "border-stone-300 bg-white text-stone-700 hover:border-amber-400 hover:bg-amber-50"
-                      }`}
-                    >
-                      {n}
-                    </button>
-                  ))}
-                </div>
+                {scheduleMode !== "custom" && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {CLASS_COUNT_PRESETS.map((n) => (
+                      <button
+                        key={n}
+                        type="button"
+                        onClick={() => setSessionCount(String(n))}
+                        className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+                          Number(sessionCount) === n
+                            ? "border-amber-500 bg-amber-100 text-amber-900"
+                            : "border-stone-300 bg-white text-stone-700 hover:border-amber-400 hover:bg-amber-50"
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <p className="mt-1 text-xs text-stone-500">
-                  Leave blank for hourly / on-demand courses.
+                  {scheduleMode === "custom"
+                    ? "Auto-counted from the Class list in Schedule below."
+                    : "Leave blank for hourly / on-demand courses."}
                 </p>
               </div>
             </div>
@@ -500,11 +573,65 @@ export default function CourseForm({ mode, course, action }: Props) {
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
         <h2 className="text-base font-semibold text-stone-900">Schedule</h2>
         <p className="mt-1 text-xs text-stone-500">
-          Leave blank for hourly / on-demand courses. Otherwise build the
-          repeat rule below, Google-Calendar style.
+          Leave blank for hourly / on-demand courses. Otherwise pick how the
+          classes are scheduled below.
         </p>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        {/* Mode toggle: weekly repeat vs. list each class */}
+        <fieldset className="mt-4 grid gap-2 sm:grid-cols-2">
+          <label
+            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+              scheduleMode === "weekly"
+                ? "border-amber-500 bg-amber-50"
+                : "border-stone-200 bg-white hover:border-amber-300"
+            }`}
+          >
+            <input
+              type="radio"
+              name="scheduleMode"
+              value="weekly"
+              checked={scheduleMode === "weekly"}
+              onChange={() => setScheduleMode("weekly")}
+              className="mt-0.5 h-4 w-4 accent-amber-700"
+            />
+            <span className="text-sm">
+              <span className="block font-semibold text-stone-900">
+                Weekly repeat
+              </span>
+              <span className="mt-0.5 block text-xs text-stone-600">
+                Same weekday &amp; class time, N weeks in a row.
+              </span>
+            </span>
+          </label>
+          <label
+            className={`flex cursor-pointer items-start gap-3 rounded-lg border p-3 transition-colors ${
+              scheduleMode === "custom"
+                ? "border-amber-500 bg-amber-50"
+                : "border-stone-200 bg-white hover:border-amber-300"
+            }`}
+          >
+            <input
+              type="radio"
+              name="scheduleMode"
+              value="custom"
+              checked={scheduleMode === "custom"}
+              onChange={() => setScheduleMode("custom")}
+              className="mt-0.5 h-4 w-4 accent-amber-700"
+            />
+            <span className="text-sm">
+              <span className="block font-semibold text-stone-900">
+                Pick each class
+              </span>
+              <span className="mt-0.5 block text-xs text-stone-600">
+                Add every class date &amp; time one by one — any pattern.
+              </span>
+            </span>
+          </label>
+        </fieldset>
+
+        {scheduleMode === "weekly" ? (
+          <>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="startDate" className={labelCls}>First class date</label>
             <input
@@ -515,9 +642,33 @@ export default function CourseForm({ mode, course, action }: Props) {
               onChange={(e) => setStartDate(e.target.value)}
               className={inputCls}
             />
+            {weekdayMismatch && startDateWeekday !== null && (
+              <div
+                role="alert"
+                className="mt-2 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+              >
+                <p className="font-semibold">
+                  Doesn&apos;t match Repeats on.
+                </p>
+                <p className="mt-0.5">
+                  {startDate} is a{" "}
+                  <strong>{WEEKDAY_NAMES_LONG[startDateWeekday]}</strong>, but
+                  Repeats on is set to{" "}
+                  <strong>
+                    {selectedWeekdayLabels.join(" / ") || "none"}
+                  </strong>
+                  . The calendar will skip this date and start Class 1 on the
+                  first matching weekday instead.
+                </p>
+                <p className="mt-1">
+                  Pick a startDate that falls on one of the Repeats-on days,
+                  or add {WEEKDAY_NAMES_LONG[startDateWeekday]} to Repeats on.
+                </p>
+              </div>
+            )}
           </div>
           <div>
-            <label htmlFor="startTime" className={labelCls}>Start time</label>
+            <label htmlFor="startTime" className={labelCls}>Class time</label>
             <input
               id="startTime"
               name="startTime"
@@ -526,6 +677,9 @@ export default function CourseForm({ mode, course, action }: Props) {
               onChange={(e) => setStartTime(e.target.value)}
               className={inputCls}
             />
+            <p className="mt-1 text-xs text-stone-500">
+              The time every class in the series starts.
+            </p>
           </div>
         </div>
         <p className="mt-2 text-xs text-stone-500">
@@ -594,6 +748,13 @@ export default function CourseForm({ mode, course, action }: Props) {
           {weekdays.map((w) => (
             <input key={w} type="hidden" name="recurrenceWeekdays" value={w} />
           ))}
+          {weekdayMismatch && startDateWeekday !== null && (
+            <p className="mt-2 text-xs text-amber-800">
+              ⚠ First class date is a{" "}
+              <strong>{WEEKDAY_NAMES_LONG[startDateWeekday]}</strong>. Add it
+              above, or change the date to a {selectedWeekdayLabels.join(" / ")}.
+            </p>
+          )}
 
           <fieldset className="mt-5">
             <legend className="text-sm font-semibold text-stone-900">Ends</legend>
@@ -674,6 +835,69 @@ export default function CourseForm({ mode, course, action }: Props) {
             </p>
           </div>
         </div>
+          </>
+        ) : (
+          // --- Pick-each-class editor -------------------------------------
+          <div className="mt-6">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h3 className="text-sm font-semibold text-stone-900">
+                Class list
+              </h3>
+              <p className="text-xs text-stone-500">
+                {validCustomCount}{" "}
+                {validCustomCount === 1 ? "class" : "classes"} entered
+              </p>
+            </div>
+            <ul className="mt-3 space-y-2">
+              {customDates.map((row, i) => (
+                <li
+                  key={i}
+                  className="flex flex-col gap-2 rounded-lg border border-stone-200 bg-stone-50/60 p-3 sm:flex-row sm:items-center"
+                >
+                  <span className="w-8 shrink-0 text-xs font-semibold text-stone-500 tabular-nums">
+                    #{i + 1}
+                  </span>
+                  <input
+                    type="date"
+                    name="customDate"
+                    value={row.date}
+                    onChange={(e) => updateCustomRow(i, { date: e.target.value })}
+                    className="flex-1 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700"
+                  />
+                  <input
+                    type="time"
+                    name="customTime"
+                    value={row.time}
+                    onChange={(e) => updateCustomRow(i, { time: e.target.value })}
+                    className="flex-1 rounded-md border border-stone-300 bg-white px-3 py-2 text-sm text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeCustomRow(i)}
+                    aria-label={`Remove class ${i + 1}`}
+                    className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-md border border-stone-300 bg-white px-3 text-xs font-medium text-stone-700 shadow-sm transition-colors hover:border-red-300 hover:bg-red-50 hover:text-red-700"
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={addCustomRow}
+                className="inline-flex min-h-10 items-center justify-center gap-1 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-50 hover:text-amber-900"
+              >
+                + Add another class
+              </button>
+              <p className="text-xs text-stone-500">
+                Any pattern — mix weekdays, times, make-up classes, bonus
+                sessions. Format &amp; booking&apos;s class count syncs
+                automatically.
+              </p>
+            </div>
+          </div>
+        )}
 
       </section>
 

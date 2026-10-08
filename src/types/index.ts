@@ -70,6 +70,14 @@ export interface Course {
   };
   /** YYYY-MM-DD dates to skip (holiday breaks, cancelled single classes). */
   skipDates?: string[];
+  /**
+   * Admin chose to list each class date + time manually instead of a
+   * weekly rule. When set and non-empty, this is the authoritative session
+   * list; the recurrence rule above is ignored. Order matches the order
+   * the admin entered them in; the public schedule sorts chronologically
+   * for display.
+   */
+  customDates?: Array<{ date: string; time: string }>;
 }
 
 export interface ArtEvent {
