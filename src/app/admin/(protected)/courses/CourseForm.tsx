@@ -128,11 +128,24 @@ export default function CourseForm({ mode, course, action }: Props) {
     setWeekdays([new Date(`${startDate}T12:00:00Z`).getUTCDay()]);
   }
 
-  const [duration, setDuration] = useState<string>(course?.duration ?? "");
-  // Two modes: "auto" lets the schedule generate the label, "custom" uses
-  // whatever the admin types. Default to "custom" only if the stored
-  // duration doesn't match what auto would produce — i.e. the admin
-  // genuinely overrode it before.
+  // Common per-class durations; "Other" opens a free-form minutes input
+  // for an unusual length (e.g. 50 min).
+  const CLASS_LENGTH_PRESETS: { label: string; minutes: number }[] = [
+    { label: "30 min", minutes: 30 },
+    { label: "45 min", minutes: 45 },
+    { label: "1 hour", minutes: 60 },
+    { label: "1.5 hours", minutes: 90 },
+    { label: "2 hours", minutes: 120 },
+    { label: "2.5 hours", minutes: 150 },
+    { label: "3 hours", minutes: 180 },
+  ];
+  const CLASS_COUNT_PRESETS = [1, 4, 6, 8, 10, 12];
+
+  const currentMinutes = Number(sessionMinutes);
+  const isPresetMinutes = CLASS_LENGTH_PRESETS.some(
+    (p) => p.minutes === currentMinutes
+  );
+
   const previewDuration = formatCourseDuration({
     priceUnit,
     status,
@@ -146,19 +159,6 @@ export default function CourseForm({ mode, course, action }: Props) {
       : undefined,
     startDate: startDate || undefined,
   });
-  const [durationMode, setDurationMode] = useState<"auto" | "custom">(() => {
-    if (!course?.duration) return "auto";
-    return course.duration.trim() === previewDuration ? "auto" : "custom";
-  });
-
-  const DURATION_PRESETS = [
-    "6 weekly classes · 1 hour each",
-    "8 weekly classes · 1 hour each",
-    "10 weekly classes · 1 hour each",
-    "One-time session",
-    "Book by the hour",
-    "Schedule to be announced",
-  ];
 
   const priceDollars = course ? (course.price / 100).toFixed(2) : "";
 
@@ -348,86 +348,113 @@ export default function CourseForm({ mode, course, action }: Props) {
           </div>
           <div className="sm:col-span-2">
             <label className={labelCls}>
-              Duration label{" "}
-              <span className="text-stone-400">
-                (the short line on the course card &amp; page — &ldquo;8 weekly classes · 1 hour each&rdquo;)
+              Course length
+              <span className="ml-1 text-stone-400">
+                (shown on the course card &amp; page)
               </span>
             </label>
-            <fieldset className="mt-2 space-y-2">
-              <label className="flex cursor-pointer items-start gap-3 rounded-md border border-stone-200 bg-white p-3 hover:border-amber-400">
+            <div className="mt-2 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label
+                  htmlFor="classLengthSelect"
+                  className="block text-xs font-medium text-stone-600"
+                >
+                  Each class is
+                </label>
+                <select
+                  id="classLengthSelect"
+                  value={isPresetMinutes ? String(currentMinutes) : "other"}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === "other") {
+                      // Keep whatever the admin had, or 50 as a nudge.
+                      if (isPresetMinutes) setSessionMinutes("50");
+                    } else {
+                      setSessionMinutes(v);
+                    }
+                  }}
+                  className={inputCls}
+                >
+                  {CLASS_LENGTH_PRESETS.map((p) => (
+                    <option key={p.minutes} value={p.minutes}>
+                      {p.label}
+                    </option>
+                  ))}
+                  <option value="other">Other…</option>
+                </select>
+                {!isPresetMinutes && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="15"
+                      step="5"
+                      value={sessionMinutes}
+                      onChange={(e) => setSessionMinutes(e.target.value)}
+                      className={inputCls}
+                      placeholder="Minutes"
+                    />
+                    <span className="text-xs text-stone-500">min</span>
+                  </div>
+                )}
+                {/* Hidden mirror so the server action always receives
+                    sessionMinutes under its canonical name even when the
+                    Schedule section is empty. */}
                 <input
-                  type="radio"
-                  name="durationMode"
-                  value="auto"
-                  checked={durationMode === "auto"}
-                  onChange={() => setDurationMode("auto")}
-                  className="mt-0.5 h-4 w-4 accent-amber-700"
+                  type="hidden"
+                  name="sessionMinutes"
+                  value={sessionMinutes}
                 />
-                <span className="flex-1 text-sm">
-                  <span className="font-medium text-stone-900">
-                    Auto from schedule
-                  </span>
-                  <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-800">
-                    Recommended
-                  </span>
-                  <span className="mt-1 block text-xs text-stone-600">
-                    Reads as:{" "}
-                    <span className="font-medium text-stone-900">
-                      {previewDuration || "(fill in the Schedule section below first)"}
-                    </span>
-                  </span>
-                </span>
-              </label>
-              <label className="flex cursor-pointer items-start gap-3 rounded-md border border-stone-200 bg-white p-3 hover:border-amber-400">
+              </div>
+              <div>
+                <label
+                  htmlFor="classCountInput"
+                  className="block text-xs font-medium text-stone-600"
+                >
+                  Total number of classes
+                </label>
                 <input
-                  type="radio"
-                  name="durationMode"
-                  value="custom"
-                  checked={durationMode === "custom"}
-                  onChange={() => setDurationMode("custom")}
-                  className="mt-0.5 h-4 w-4 accent-amber-700"
-                />
-                <span className="flex-1 text-sm">
-                  <span className="font-medium text-stone-900">Custom text</span>
-                  <span className="mt-1 block text-xs text-stone-600">
-                    Override the auto label with your own wording.
-                  </span>
-                </span>
-              </label>
-            </fieldset>
-            {durationMode === "custom" && (
-              <div className="mt-3 space-y-2">
-                <input
-                  id="duration"
-                  name="duration"
-                  type="text"
-                  value={duration}
-                  onChange={(e) => setDuration(e.target.value)}
-                  placeholder="e.g. 8 weekly classes · 1 hour each"
+                  id="classCountInput"
+                  name="sessionCount"
+                  type="number"
+                  min="1"
+                  max="200"
+                  value={sessionCount}
+                  onChange={(e) => setSessionCount(e.target.value)}
+                  placeholder="e.g. 8"
                   className={inputCls}
                 />
-                <div className="flex flex-wrap gap-1.5">
-                  <span className="self-center text-xs text-stone-500">
-                    Quick picks:
-                  </span>
-                  {DURATION_PRESETS.map((p) => (
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {CLASS_COUNT_PRESETS.map((n) => (
                     <button
-                      key={p}
+                      key={n}
                       type="button"
-                      onClick={() => setDuration(p)}
-                      className="rounded-full border border-stone-300 bg-white px-3 py-1 text-xs text-stone-700 transition-colors hover:border-amber-400 hover:bg-amber-50"
+                      onClick={() => setSessionCount(String(n))}
+                      className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+                        Number(sessionCount) === n
+                          ? "border-amber-500 bg-amber-100 text-amber-900"
+                          : "border-stone-300 bg-white text-stone-700 hover:border-amber-400 hover:bg-amber-50"
+                      }`}
                     >
-                      {p}
+                      {n}
                     </button>
                   ))}
                 </div>
+                <p className="mt-1 text-xs text-stone-500">
+                  Leave blank for hourly / on-demand courses.
+                </p>
               </div>
-            )}
-            {/* Hidden input ensures auto-mode saves an empty duration string
-                so formatCourseDuration takes over in the course store. */}
-            {durationMode === "auto" && (
-              <input type="hidden" name="duration" value="" />
-            )}
+            </div>
+            <div className="mt-3 rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-xs text-stone-600">
+              <span className="font-semibold uppercase tracking-wider text-stone-500">
+                Preview
+              </span>
+              <span className="ml-2 font-medium text-stone-900">
+                {previewDuration}
+              </span>
+            </div>
+            {/* The duration label is always derived server-side from
+                sessionMinutes + sessionCount, so send an empty string. */}
+            <input type="hidden" name="duration" value="" />
           </div>
           {format === "online" && (
             <>
@@ -477,7 +504,7 @@ export default function CourseForm({ mode, course, action }: Props) {
           repeat rule below, Google-Calendar style.
         </p>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-3">
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="startDate" className={labelCls}>First class date</label>
             <input
@@ -500,20 +527,14 @@ export default function CourseForm({ mode, course, action }: Props) {
               className={inputCls}
             />
           </div>
-          <div>
-            <label htmlFor="sessionMinutes" className={labelCls}>Session length (min)</label>
-            <input
-              id="sessionMinutes"
-              name="sessionMinutes"
-              type="number"
-              min="15"
-              step="5"
-              value={sessionMinutes}
-              onChange={(e) => setSessionMinutes(e.target.value)}
-              className={inputCls}
-            />
-          </div>
         </div>
+        <p className="mt-2 text-xs text-stone-500">
+          Class length and the total number of classes live in{" "}
+          <span className="font-medium text-stone-700">
+            Format &amp; booking
+          </span>{" "}
+          above — they drive the course-card label too.
+        </p>
 
         <div className="mt-6 rounded-xl border border-stone-200 bg-stone-50 p-4 sm:p-5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -586,18 +607,16 @@ export default function CourseForm({ mode, course, action }: Props) {
                   onChange={() => setEndMode("count")}
                   className="h-4 w-4 accent-stone-900"
                 />
-                <span className="whitespace-nowrap">After</span>
-                <input
-                  name="sessionCount"
-                  type="number"
-                  min="1"
-                  max="200"
-                  value={sessionCount}
-                  onChange={(e) => setSessionCount(e.target.value)}
-                  onFocus={() => setEndMode("count")}
-                  className="w-20 rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm text-stone-900 shadow-sm focus:border-amber-700 focus:outline-none focus:ring-1 focus:ring-amber-700"
-                />
-                <span className="whitespace-nowrap text-stone-500">classes</span>
+                <span className="whitespace-nowrap">
+                  After{" "}
+                  <span className="font-semibold text-stone-900 tabular-nums">
+                    {sessionCount || "—"}
+                  </span>{" "}
+                  classes
+                </span>
+                <span className="text-xs text-stone-400">
+                  (set in Format &amp; booking)
+                </span>
               </label>
               <label className="inline-flex items-center gap-3 text-sm text-stone-700">
                 <input
@@ -656,19 +675,6 @@ export default function CourseForm({ mode, course, action }: Props) {
           </div>
         </div>
 
-        <div className="mt-5 rounded-lg border border-stone-200 bg-stone-50 px-4 py-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-stone-500">
-            Auto-derived from these schedule fields
-          </p>
-          <p className="mt-1 text-sm font-medium text-stone-800">
-            {previewDuration}
-          </p>
-          <p className="mt-1 text-xs text-stone-500">
-            This is the string the &ldquo;Auto from schedule&rdquo; duration
-            option in Format &amp; booking will show. Change the schedule
-            fields here to update it.
-          </p>
-        </div>
       </section>
 
       {state.error && (
