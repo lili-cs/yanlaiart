@@ -14,7 +14,7 @@ export default async function EditHomePage() {
         <p className="mt-1 text-sm text-stone-600">
           Hero text and the three section headings.{" "}
           <a href="/" target="_blank" rel="noopener noreferrer" className="underline hover:text-stone-800">
-            View public page ↗
+            Preview page ↗
           </a>
         </p>
       </div>

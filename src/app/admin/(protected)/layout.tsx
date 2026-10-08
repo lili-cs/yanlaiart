@@ -41,12 +41,6 @@ export default async function ProtectedLayout({
               Signed in as{" "}
               <strong className="text-stone-700">{session.username}</strong>
             </span>
-            <Link
-              href="/"
-              className="hidden text-sm text-stone-600 hover:text-stone-900 sm:inline"
-            >
-              View site ↗
-            </Link>
             <form action={logoutAction}>
               <button
                 type="submit"
