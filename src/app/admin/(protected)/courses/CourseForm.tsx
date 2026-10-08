@@ -140,6 +140,121 @@ export default function CourseForm({ mode, course, action }: Props) {
       prev.length <= 1 ? [{ date: "", time: "" }] : prev.filter((_, idx) => idx !== i)
     );
   }
+
+  /** Expand the Weekly state the admin currently has entered into a flat
+   *  (date, time) list — the same math schedule.ts does server-side, but
+   *  inlined so the client can preview it without server-only imports. */
+  function expandWeeklyToSlots(): Array<{ date: string; time: string }> {
+    if (!startDate || !/^\d{4}-\d{2}-\d{2}$/.test(startDate)) return [];
+    if (!startTime || !/^\d{1,2}:\d{2}$/.test(startTime)) return [];
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const addDays = (iso: string, days: number): string => {
+      const d = new Date(`${iso}T12:00:00Z`);
+      d.setUTCDate(d.getUTCDate() + days);
+      return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+    };
+    const dayOfWeekUtc = (iso: string) =>
+      new Date(`${iso}T12:00:00Z`).getUTCDay();
+    const weekOffsetSunday = (dateIso: string, anchorIso: string) => {
+      const anchor = new Date(`${anchorIso}T12:00:00Z`);
+      const anchorSun = addDays(anchorIso, -anchor.getUTCDay());
+      const d = new Date(`${dateIso}T12:00:00Z`);
+      const dSun = addDays(dateIso, -d.getUTCDay());
+      return Math.round(
+        (new Date(`${dSun}T12:00:00Z`).getTime() -
+          new Date(`${anchorSun}T12:00:00Z`).getTime()) /
+          (7 * 86400 * 1000)
+      );
+    };
+    const intervalN = Math.max(1, Number(interval) || 1);
+    const effectiveWeekdays =
+      weekdays.length > 0 ? [...weekdays] : [dayOfWeekUtc(startDate)];
+    const targetCount = Number(sessionCount) || 0;
+    const useEndDate =
+      endMode === "date" && /^\d{4}-\d{2}-\d{2}$/.test(endDate) ? endDate : "";
+    if (!targetCount && !useEndDate) return [];
+    const skipSet = new Set(
+      skipDatesRaw
+        .split(",")
+        .map((s) => s.trim())
+        .filter((s) => /^\d{4}-\d{2}-\d{2}$/.test(s))
+    );
+    const extraTimes = sessionTimesRaw
+      .split(",")
+      .map((s) => s.trim())
+      .filter((s) => /^\d{1,2}:\d{2}$/.test(s));
+    const times = [...new Set([startTime, ...extraTimes])];
+    const dates: string[] = [];
+    const MAX_DAYS = 365 * 3;
+    for (let offset = 0; offset < MAX_DAYS; offset++) {
+      const date = addDays(startDate, offset);
+      if (date < startDate) continue;
+      if (weekOffsetSunday(date, startDate) % intervalN !== 0) continue;
+      if (!effectiveWeekdays.includes(dayOfWeekUtc(date))) continue;
+      if (skipSet.has(date)) continue;
+      if (targetCount && dates.length >= targetCount) break;
+      if (useEndDate && date > useEndDate) break;
+      dates.push(date);
+      if (useEndDate && date >= useEndDate) break;
+    }
+    const slots: Array<{ date: string; time: string }> = [];
+    for (const d of dates) for (const t of times) slots.push({ date: d, time: t });
+    slots.sort((a, b) =>
+      a.date === b.date
+        ? a.time.localeCompare(b.time)
+        : a.date.localeCompare(b.date)
+    );
+    return slots;
+  }
+
+  /** True when the custom-dates list is still at its "nothing entered yet"
+   *  state — one blank row. Used to decide whether to auto-fill on switch. */
+  function isCustomListEmpty(): boolean {
+    return (
+      customDates.length === 1 &&
+      !customDates[0].date &&
+      !customDates[0].time
+    );
+  }
+
+  function fillFromWeekly() {
+    const slots = expandWeeklyToSlots();
+    if (slots.length > 0) setCustomDates(slots);
+  }
+
+  const weeklyPreviewCount = (() => {
+    // Only recompute while the admin might see the button — in custom mode.
+    if (scheduleMode !== "custom") return 0;
+    return expandWeeklyToSlots().length;
+  })();
+
+  function switchToCustom() {
+    const wasWeekly = scheduleMode === "weekly";
+    setScheduleMode("custom");
+    // First-time switch from a filled-in Weekly rule → auto-fill the list
+    // so the admin starts from "the current schedule as a list" rather
+    // than one blank row.
+    if (wasWeekly && isCustomListEmpty()) {
+      const slots = expandWeeklyToSlots();
+      if (slots.length > 0) setCustomDates(slots);
+    }
+  }
+
+  function switchToWeekly() {
+    // If flipping back from custom with real data, warn once so the admin
+    // doesn't lose their manual list on save.
+    if (
+      scheduleMode === "custom" &&
+      validCustomCount > 0 &&
+      typeof window !== "undefined"
+    ) {
+      const ok = window.confirm(
+        `Switching back to Weekly repeat will replace your ${validCustomCount}-class list with the weekly rule on save. Continue?`
+      );
+      if (!ok) return;
+    }
+    setScheduleMode("weekly");
+  }
   const validCustomCount = customDates.filter(
     (r) => /^\d{4}-\d{2}-\d{2}$/.test(r.date) && /^\d{1,2}:\d{2}$/.test(r.time)
   ).length;
@@ -591,7 +706,7 @@ export default function CourseForm({ mode, course, action }: Props) {
               name="scheduleMode"
               value="weekly"
               checked={scheduleMode === "weekly"}
-              onChange={() => setScheduleMode("weekly")}
+              onChange={switchToWeekly}
               className="mt-0.5 h-4 w-4 accent-amber-700"
             />
             <span className="text-sm">
@@ -615,7 +730,7 @@ export default function CourseForm({ mode, course, action }: Props) {
               name="scheduleMode"
               value="custom"
               checked={scheduleMode === "custom"}
-              onChange={() => setScheduleMode("custom")}
+              onChange={switchToCustom}
               className="mt-0.5 h-4 w-4 accent-amber-700"
             />
             <span className="text-sm">
@@ -889,6 +1004,35 @@ export default function CourseForm({ mode, course, action }: Props) {
                 className="inline-flex min-h-10 items-center justify-center gap-1 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-50 hover:text-amber-900"
               >
                 + Add another class
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (
+                    validCustomCount > 0 &&
+                    typeof window !== "undefined" &&
+                    !window.confirm(
+                      `Replace your ${validCustomCount}-class list with the ${weeklyPreviewCount} classes from the Weekly rule?`
+                    )
+                  ) {
+                    return;
+                  }
+                  fillFromWeekly();
+                }}
+                disabled={weeklyPreviewCount === 0}
+                className="inline-flex min-h-10 items-center justify-center gap-1 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 shadow-sm transition-colors hover:border-amber-400 hover:bg-amber-50 hover:text-amber-900 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:border-stone-300 disabled:hover:bg-white disabled:hover:text-stone-700"
+                title={
+                  weeklyPreviewCount === 0
+                    ? "Fill in First class date, Class time, Repeats on, and Ends in the Weekly tab first."
+                    : `Overwrite the list with ${weeklyPreviewCount} classes generated from the Weekly rule.`
+                }
+              >
+                ⤶ Fill from Weekly schedule
+                {weeklyPreviewCount > 0 && (
+                  <span className="text-xs text-stone-500">
+                    ({weeklyPreviewCount})
+                  </span>
+                )}
               </button>
               <p className="text-xs text-stone-500">
                 Any pattern — mix weekdays, times, make-up classes, bonus
