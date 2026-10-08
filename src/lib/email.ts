@@ -299,26 +299,35 @@ export async function sendBookingConfirmationToCustomer(
   p: BookingEmailPayload
 ): Promise<void> {
   const rows = buildDetailRows(p);
+  const hasFullSchedule = Boolean(p.allSlots && p.allSlots.length > 1);
   const heading =
     p.itemType === "course"
-      ? "Your booking request is received"
+      ? "Your booking is confirmed"
       : "Your registration is confirmed";
   const closingLine =
     p.itemType === "course"
-      ? "We'll be in touch shortly by email to confirm your preferred date and time and share studio details."
-      : "We look forward to seeing you. You'll receive a reminder closer to the date.";
+      ? hasFullSchedule
+        ? "We'll see you in class — a reminder will go out before your first class."
+        : "We'll see you in class — a reminder will go out closer to the date."
+      : "We look forward to seeing you. A reminder will go out closer to the date.";
 
-  const subject = `${heading} — ${p.itemName}`;
+  const subject =
+    p.itemType === "course"
+      ? `Booking confirmed — ${p.itemName}`
+      : `Registration confirmed — ${p.itemName}`;
   const attachment = buildIcsAttachmentFor(p);
 
   const joinLineText = p.isOnline && p.meetingUrl
     ? `\nJoin online: ${p.meetingUrl}\n`
     : "";
+  const calendarTarget = hasFullSchedule
+    ? "all classes"
+    : p.itemType === "course"
+      ? "this class"
+      : "this event";
   const calendarLineText = attachment
-    ? "\nA calendar invite (.ics) is attached to this email — open it to add this session to your calendar.\n"
+    ? `\nA calendar invite (.ics) is attached to this email — open it to add ${calendarTarget} to your calendar${p.isOnline ? " with the meeting link built in" : ""}.\n`
     : "";
-
-  const hasFullSchedule = Boolean(p.allSlots && p.allSlots.length > 1);
   const scheduleTextBlock =
     hasFullSchedule && p.allSlots
       ? `\n${renderClassScheduleText(p.allSlots)}`
@@ -328,7 +337,7 @@ export async function sendBookingConfirmationToCustomer(
     `Hi ${p.customerName},`,
     "",
     p.itemType === "course"
-      ? `Thank you for booking with Yan Lai Art. We've received your request for ${p.itemName}.`
+      ? `Thank you for booking with Yan Lai Art. Your spot in ${p.itemName} is confirmed.`
       : `Thank you for registering for ${p.itemName} with Yan Lai Art.`,
     joinLineText,
     renderDetailsText(rows),
@@ -352,7 +361,7 @@ export async function sendBookingConfirmationToCustomer(
     hasFullSchedule && p.allSlots ? renderClassScheduleHtml(p.allSlots) : "";
   const calendarNoteHtml = attachment
     ? `<p style="margin: 0 0 16px; padding: 10px 12px; background: #fef3c7; border-radius: 6px; font-size: 13px; color: #78350f;">
-        📅 A calendar invite is attached to this email — open it to add ${hasFullSchedule ? "all classes" : "this session"} to your calendar${p.isOnline ? " with the meeting link built in" : ""}.
+        📅 A calendar invite is attached — open it to add ${calendarTarget} to your calendar${p.isOnline ? " with the meeting link built in" : ""}.
       </p>`
     : "";
 
@@ -363,7 +372,7 @@ export async function sendBookingConfirmationToCustomer(
       <p style="margin: 0 0 16px;">
         ${
           p.itemType === "course"
-            ? `Thank you for booking with Yan Lai Art. We've received your request for <strong>${escapeHtml(p.itemName)}</strong>.`
+            ? `Thank you for booking with Yan Lai Art. Your spot in <strong>${escapeHtml(p.itemName)}</strong> is confirmed.`
             : `Thank you for registering for <strong>${escapeHtml(p.itemName)}</strong>.`
         }
       </p>
