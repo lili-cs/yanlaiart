@@ -97,12 +97,11 @@ function buildDetailRows(p: BookingEmailPayload): Array<[string, string]> {
   const rows: Array<[string, string]> = [];
   rows.push([p.itemType === "course" ? "Course" : "Event", p.itemName]);
   if (p.itemDetails) rows.push(["Details", p.itemDetails]);
-  if (p.requestedDate) rows.push(["Requested date", formatRequestedDate(p.requestedDate)]);
-  if (p.requestedTime) rows.push(["Requested time", formatRequestedTime(p.requestedTime)]);
+  if (p.requestedDate) rows.push(["Date", formatRequestedDate(p.requestedDate)]);
+  if (p.requestedTime) rows.push(["Time", formatRequestedTime(p.requestedTime)]);
   const where = locationLine(p);
   if (where) rows.push([p.isOnline ? "Where" : "Location", where]);
   rows.push(["Amount", p.amountLabel]);
-  if (p.referenceId) rows.push(["Reference", p.referenceId]);
   return rows;
 }
 
@@ -201,10 +200,6 @@ function buildIcsAttachmentFor(p: BookingEmailPayload): Attachment | null {
   if (p.notes) {
     descriptionParts.push("");
     descriptionParts.push(`Your notes: ${p.notes}`);
-  }
-  if (p.referenceId) {
-    descriptionParts.push("");
-    descriptionParts.push(`Reference: ${p.referenceId}`);
   }
   const description = descriptionParts.join("\n");
 
