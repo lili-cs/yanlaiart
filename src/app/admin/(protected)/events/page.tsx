@@ -47,7 +47,7 @@ export default async function AdminEventsPage({ searchParams }: Props) {
               <th className="px-4 py-3">Date</th>
               <th className="px-4 py-3">Location</th>
               <th className="px-4 py-3">Price</th>
-              <th className="px-4 py-3">Capacity</th>
+              <th className="px-4 py-3">Participants</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -82,7 +82,14 @@ export default async function AdminEventsPage({ searchParams }: Props) {
                     formatPrice(e.price)
                   )}
                 </td>
-                <td className="px-4 py-3 text-stone-700">{e.capacity}</td>
+                <td className="px-4 py-3 text-xs text-stone-700">
+                  <div>Max {e.capacity}</div>
+                  {e.minParticipants && (
+                    <div className="text-stone-500">
+                      Min {e.minParticipants}
+                    </div>
+                  )}
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
                     <a

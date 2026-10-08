@@ -95,7 +95,10 @@ export default async function EventDetailPage({ params }: Props) {
             </div>
 
             <p className="mt-4 text-sm text-stone-600">
-              Capacity: {event.capacity} participants
+              Up to {event.capacity} participants
+              {event.minParticipants
+                ? ` · runs with ${event.minParticipants}+ registered`
+                : ""}
             </p>
 
             <div className="mt-8 border-t border-stone-300/70 pt-8">

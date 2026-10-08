@@ -91,7 +91,11 @@ export interface ArtEvent {
   time: string;
   location: string;
   imageUrl: string;
+  /** Maximum number of participants — the sellout cap. */
   capacity: number;
+  /** Minimum participants needed to run the event. Optional — events
+   *  without a floor just show the max. */
+  minParticipants?: number;
   // Set for online events; surfaced in the calendar invite and email.
   meetingUrl?: string;
 }

@@ -17,8 +17,8 @@ export default function NewEventPage() {
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-stone-900">New event</h1>
         <p className="mt-1 text-sm text-stone-500">
-          Set the date, time, location, and capacity. Leave the meeting URL
-          blank for in-person events.
+          Set the date, time, location, and how many participants it takes.
+          Leave the meeting URL blank for in-person events.
         </p>
       </div>
       <EventForm mode="new" action={createEventAction} />

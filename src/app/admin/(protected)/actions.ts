@@ -623,7 +623,18 @@ function buildEventFromFormData(
 
   const price = eventPriceCents(String(formData.get("price") ?? "0"));
   const capacity = optionalNumber(formData.get("capacity"));
-  if (!capacity || capacity < 1) throw new Error("Capacity must be at least 1.");
+  if (!capacity || capacity < 1) {
+    throw new Error("Max participants must be at least 1.");
+  }
+  const minParticipants = optionalNumber(formData.get("minParticipants"));
+  if (minParticipants !== undefined && minParticipants < 1) {
+    throw new Error("Min participants must be at least 1 (or blank).");
+  }
+  if (minParticipants !== undefined && minParticipants > capacity) {
+    throw new Error(
+      "Min participants can't be larger than max participants."
+    );
+  }
 
   return {
     slug,
@@ -640,6 +651,7 @@ function buildEventFromFormData(
       existing?.imageUrl ??
       "https://placehold.co/800x500/fce7f3/9d174d?text=Event",
     capacity,
+    minParticipants,
     meetingUrl: optionalString(formData.get("meetingUrl")),
   };
 }

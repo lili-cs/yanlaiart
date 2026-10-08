@@ -226,8 +226,10 @@ export default function EventForm({ mode, event, action }: Props) {
       </section>
 
       <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6">
-        <h2 className="text-base font-semibold text-stone-900">Price & capacity</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <h2 className="text-base font-semibold text-stone-900">
+          Price &amp; participants
+        </h2>
+        <div className="mt-4 grid gap-4 sm:grid-cols-3">
           <div>
             <label htmlFor="price" className={labelCls}>Price (USD) *</label>
             <input
@@ -243,7 +245,27 @@ export default function EventForm({ mode, event, action }: Props) {
             />
           </div>
           <div>
-            <label htmlFor="capacity" className={labelCls}>Capacity *</label>
+            <label htmlFor="minParticipants" className={labelCls}>
+              Min participants to run{" "}
+              <span className="text-stone-400">(optional)</span>
+            </label>
+            <input
+              id="minParticipants"
+              name="minParticipants"
+              type="number"
+              min="1"
+              defaultValue={event?.minParticipants ?? ""}
+              placeholder="e.g. 4"
+              className={inputCls}
+            />
+            <p className="mt-1 text-xs text-stone-500">
+              The event runs when this many people have registered.
+            </p>
+          </div>
+          <div>
+            <label htmlFor="capacity" className={labelCls}>
+              Max participants *
+            </label>
             <input
               id="capacity"
               name="capacity"
@@ -251,8 +273,12 @@ export default function EventForm({ mode, event, action }: Props) {
               min="1"
               required
               defaultValue={event?.capacity}
+              placeholder="e.g. 20"
               className={inputCls}
             />
+            <p className="mt-1 text-xs text-stone-500">
+              The event is full once this many have registered.
+            </p>
           </div>
         </div>
       </section>
