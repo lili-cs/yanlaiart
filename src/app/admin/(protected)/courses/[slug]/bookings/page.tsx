@@ -43,7 +43,12 @@ export default async function CourseBookingsPage({ params }: Props) {
           </Link>
           <h1 className="mt-2 text-2xl font-bold text-stone-900">{course.title}</h1>
           <p className="text-sm text-stone-500">
-            {course.titleCn} · {paidCount} paid
+            {course.titleCn && (
+              <>
+                {course.titleCn} ·{" "}
+              </>
+            )}
+            {paidCount} paid
             {pendingCount > 0 ? ` (${pendingCount} pending)` : ""} ·{" "}
             <span
               className={

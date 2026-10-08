@@ -61,7 +61,9 @@ export default async function AdminEventsPage({ searchParams }: Props) {
                   <div className="font-semibold text-stone-900 group-hover:text-rose-900">
                     {e.title}
                   </div>
-                  <div className="text-xs text-stone-500">{e.titleCn}</div>
+                  {e.titleCn && (
+                    <div className="text-xs text-stone-500">{e.titleCn}</div>
+                  )}
                   {e.meetingUrl && (
                     <div className="mt-1 truncate text-xs text-teal-700">
                       {e.meetingUrl}

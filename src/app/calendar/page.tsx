@@ -53,7 +53,7 @@ export default async function CalendarPage() {
                         {c.title}
                       </span>
                       <span className="mt-0.5 text-xs text-stone-500">
-                        {c.titleCn} · {c.duration}
+                        {c.titleCn ? `${c.titleCn} · ${c.duration}` : c.duration}
                       </span>
                     </Link>
                   </li>

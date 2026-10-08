@@ -60,9 +60,11 @@ export default async function EventDetailPage({ params }: Props) {
             <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
               {event.title}
             </h1>
-            <p className="mt-1 text-base text-stone-500 sm:text-lg">
-              {event.titleCn}
-            </p>
+            {event.titleCn && (
+              <p className="mt-1 text-base text-stone-500 sm:text-lg">
+                {event.titleCn}
+              </p>
+            )}
 
             <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
               <div className="rounded-xl border border-stone-300/70 bg-gradient-to-br from-stone-50 to-amber-50 p-4">

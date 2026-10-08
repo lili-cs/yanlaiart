@@ -172,7 +172,9 @@ export default async function AdminDashboard({ searchParams }: Props) {
                   <div className="font-semibold text-stone-900 group-hover:text-amber-900">
                     {c.title}
                   </div>
-                  <div className="text-xs text-stone-500">{c.titleCn}</div>
+                  {c.titleCn && (
+                    <div className="text-xs text-stone-500">{c.titleCn}</div>
+                  )}
                   {c.format === "online" && (
                     <div className="mt-1 truncate text-xs text-teal-700">
                       {c.meetingUrl ?? (

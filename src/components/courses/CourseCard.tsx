@@ -57,7 +57,9 @@ export default function CourseCard({ course }: CourseCardProps) {
         <h3 className="text-lg font-semibold text-stone-900 transition-colors group-hover:text-amber-900">
           {course.title}
         </h3>
-        <p className="mt-1 text-sm text-stone-500">{course.titleCn}</p>
+        {course.titleCn && (
+          <p className="mt-1 text-sm text-stone-500">{course.titleCn}</p>
+        )}
         <p className="mt-2 flex-1 text-sm text-stone-600 line-clamp-2">
           {course.description}
         </p>

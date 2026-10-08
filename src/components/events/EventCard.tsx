@@ -35,7 +35,9 @@ export default function EventCard({ event }: EventCardProps) {
         <h3 className="mt-2 text-lg font-semibold text-stone-900 transition-colors group-hover:text-amber-900">
           {event.title}
         </h3>
-        <p className="text-sm text-stone-500">{event.titleCn}</p>
+        {event.titleCn && (
+          <p className="text-sm text-stone-500">{event.titleCn}</p>
+        )}
         <p className="mt-2 flex-1 text-sm text-stone-600 line-clamp-2">
           {event.description}
         </p>
