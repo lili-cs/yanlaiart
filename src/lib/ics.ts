@@ -29,7 +29,7 @@ const NY_VTIMEZONE = [
   "END:VTIMEZONE",
 ];
 
-export interface BookingIcsInput {
+export interface BookingIcsEvent {
   uid: string;
   /** YYYY-MM-DD, interpreted as America/New_York local date. */
   localDate: string;
@@ -37,6 +37,15 @@ export interface BookingIcsInput {
   localStartTime: string;
   /** HH:mm (24-hour). If omitted, `startTime + 60min` is used. */
   localEndTime?: string;
+  /** Optional per-event summary suffix — e.g. "(Class 3 of 10)". When
+   *  omitted, the top-level `summary` is used as-is. */
+  summarySuffix?: string;
+}
+
+export interface BookingIcsInput {
+  /** One or more events to pack into a single .ics file. Calendar apps
+   *  importing the attachment add each as its own separate event. */
+  events: BookingIcsEvent[];
   summary: string;
   description: string;
   location?: string;
@@ -101,8 +110,6 @@ function foldLine(line: string): string {
 }
 
 export function buildBookingIcs(input: BookingIcsInput): string {
-  const endTime = input.localEndTime ?? addMinutes(input.localStartTime, 60);
-
   const lines: string[] = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
@@ -110,23 +117,33 @@ export function buildBookingIcs(input: BookingIcsInput): string {
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     ...NY_VTIMEZONE,
-    "BEGIN:VEVENT",
-    `UID:${input.uid}`,
-    `DTSTAMP:${icsUtcStamp(new Date())}`,
-    `DTSTART;TZID=${STUDIO_TZID}:${icsDateTime(input.localDate, input.localStartTime)}`,
-    `DTEND;TZID=${STUDIO_TZID}:${icsDateTime(input.localDate, endTime)}`,
-    `SUMMARY:${escapeIcsText(input.summary)}`,
-    `DESCRIPTION:${escapeIcsText(input.description)}`,
   ];
-  if (input.location) {
-    lines.push(`LOCATION:${escapeIcsText(input.location)}`);
+  const stamp = icsUtcStamp(new Date());
+  for (const ev of input.events) {
+    const endTime = ev.localEndTime ?? addMinutes(ev.localStartTime, 60);
+    const summary = ev.summarySuffix
+      ? `${input.summary} ${ev.summarySuffix}`
+      : input.summary;
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:${ev.uid}`,
+      `DTSTAMP:${stamp}`,
+      `DTSTART;TZID=${STUDIO_TZID}:${icsDateTime(ev.localDate, ev.localStartTime)}`,
+      `DTEND;TZID=${STUDIO_TZID}:${icsDateTime(ev.localDate, endTime)}`,
+      `SUMMARY:${escapeIcsText(summary)}`,
+      `DESCRIPTION:${escapeIcsText(input.description)}`
+    );
+    if (input.location) {
+      lines.push(`LOCATION:${escapeIcsText(input.location)}`);
+    }
+    if (input.url) {
+      // RFC 5545 says URI values are not text — no comma/semicolon escaping.
+      // But CR/LF still need stripping (defense against malicious input).
+      lines.push(`URL:${input.url.replace(/[\r\n]+/g, "")}`);
+    }
+    lines.push("END:VEVENT");
   }
-  if (input.url) {
-    // RFC 5545 says URI values are not text — no comma/semicolon escaping.
-    // But CR/LF still need stripping (defense against malicious input).
-    lines.push(`URL:${input.url.replace(/[\r\n]+/g, "")}`);
-  }
-  lines.push("END:VEVENT", "END:VCALENDAR");
+  lines.push("END:VCALENDAR");
 
   return lines.map(foldLine).join(CRLF) + CRLF;
 }

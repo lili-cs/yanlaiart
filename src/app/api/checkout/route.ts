@@ -3,8 +3,10 @@ import crypto from "node:crypto";
 import { getStripe } from "@/lib/stripe";
 import { getCourseBySlug } from "@/data/courses";
 import { getEventBySlug } from "@/data/events";
-import { formatPrice } from "@/lib/utils";
+import { addMinutesToHhmm, formatPrice } from "@/lib/utils";
 import { parseTimeRange } from "@/lib/ics";
+import { courseScheduledSlots } from "@/lib/schedule";
+import type { BookingSlot } from "@/lib/email";
 import {
   sendBookingConfirmationToCustomer,
   sendBookingNotificationToOwner,
@@ -15,16 +17,6 @@ import { getBusinessHours, validateBookingSlot } from "@/lib/business-hours";
 import { checkBookingAnomalies } from "@/lib/booking-alerts";
 
 const STUDIO_ADDRESS = "Yan Lai Art Studio · Pennington, NJ 08534";
-
-function addMinutesToHhmm(hhmm: string, minutes: number): string {
-  const [h, m] = hhmm.split(":").map(Number);
-  if (!Number.isFinite(h) || !Number.isFinite(m)) return hhmm;
-  const total = h * 60 + m + minutes;
-  const wrapped = ((total % 1440) + 1440) % 1440;
-  const nh = Math.floor(wrapped / 60);
-  const nm = wrapped % 60;
-  return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`;
-}
 
 export const runtime = "nodejs";
 
@@ -96,6 +88,10 @@ export async function POST(request: Request) {
   let effectiveDate = requestedDate;
   let effectiveStartTime = requestedTime;
   let effectiveEndTime: string | undefined;
+  // Multi-class courses: handed to the email as a full (date, time) list
+  // so the confirmation lists every class and the .ics attachment adds
+  // one event per class.
+  let allSlots: BookingSlot[] | undefined;
 
   if (itemType === "course") {
     const course = await getCourseBySlug(itemSlug);
@@ -136,6 +132,15 @@ export async function POST(request: Request) {
     meetingInstructions = course.meetingInstructions;
     itemLocation = isOnline ? undefined : STUDIO_ADDRESS;
     effectiveEndTime = addMinutesToHhmm(requestedTime, course.sessionMinutes ?? 60);
+    const slots = courseScheduledSlots(course);
+    if (slots.length > 1) {
+      const durationMin = course.sessionMinutes ?? 60;
+      allSlots = slots.map((s) => ({
+        date: s.date,
+        time: s.time,
+        endTime: addMinutesToHhmm(s.time, durationMin),
+      }));
+    }
   } else {
     const event = await getEventBySlug(itemSlug);
     if (!event) {
@@ -179,6 +184,7 @@ export async function POST(request: Request) {
       requestedDate: effectiveDate || undefined,
       requestedTime: effectiveStartTime || undefined,
       requestedEndTime: effectiveEndTime,
+      allSlots,
       notes: notes || undefined,
       amountLabel,
       referenceId,

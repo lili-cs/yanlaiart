@@ -2,6 +2,12 @@ import { buildBookingIcs } from "@/lib/ics";
 
 const RESEND_ENDPOINT = "https://api.resend.com/emails";
 
+export interface BookingSlot {
+  date: string;       // YYYY-MM-DD, studio local date
+  time: string;       // HH:mm, studio local time
+  endTime?: string;   // HH:mm; falls back to time + 60min
+}
+
 export interface BookingEmailPayload {
   itemType: "course" | "event";
   itemName: string;
@@ -12,6 +18,11 @@ export interface BookingEmailPayload {
   requestedDate?: string;
   requestedTime?: string;
   requestedEndTime?: string;
+  /** Full class-by-class list for scheduled courses with >1 class. First
+   *  entry equals the (requestedDate, requestedTime) above. When set, the
+   *  email body renders a schedule table and the .ics attachment carries
+   *  one VEVENT per entry so adding it to a calendar creates N events. */
+  allSlots?: BookingSlot[];
   notes?: string;
   amountLabel: string;
   referenceId?: string;
@@ -97,12 +108,51 @@ function buildDetailRows(p: BookingEmailPayload): Array<[string, string]> {
   const rows: Array<[string, string]> = [];
   rows.push([p.itemType === "course" ? "Course" : "Event", p.itemName]);
   if (p.itemDetails) rows.push(["Details", p.itemDetails]);
-  if (p.requestedDate) rows.push(["Date", formatRequestedDate(p.requestedDate)]);
-  if (p.requestedTime) rows.push(["Time", formatRequestedTime(p.requestedTime)]);
+  // Multi-class courses render the full class list in its own block below
+  // the details table — a single Date/Time row would be misleading.
+  const hasFullSchedule = Boolean(p.allSlots && p.allSlots.length > 1);
+  if (!hasFullSchedule) {
+    if (p.requestedDate) rows.push(["Date", formatRequestedDate(p.requestedDate)]);
+    if (p.requestedTime) rows.push(["Time", formatRequestedTime(p.requestedTime)]);
+  }
   const where = locationLine(p);
   if (where) rows.push([p.isOnline ? "Where" : "Location", where]);
   rows.push(["Amount", p.amountLabel]);
   return rows;
+}
+
+function renderClassScheduleHtml(slots: BookingSlot[]): string {
+  const rows = slots
+    .map(
+      (s, i) => `
+        <tr>
+          <td style="padding: 6px 12px 6px 10px; color: #a16207; font-size: 12px; font-weight: 600; text-align: right; vertical-align: top; white-space: nowrap;">#${i + 1}</td>
+          <td style="padding: 6px 10px 6px 0; color: #292524; font-size: 14px; white-space: nowrap;">${escapeHtml(formatRequestedDate(s.date))}</td>
+          <td style="padding: 6px 10px 6px 0; color: #292524; font-size: 14px; white-space: nowrap;">${escapeHtml(formatRequestedTime(s.time))}</td>
+        </tr>`
+    )
+    .join("");
+  return `
+    <div style="margin: 0 0 20px; border: 1px solid #fde68a; background: #fffbeb; border-radius: 10px; overflow: hidden;">
+      <div style="padding: 10px 14px; background: #fef3c7; border-bottom: 1px solid #fde68a; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #78350f;">
+        Full class schedule · ${slots.length} classes
+      </div>
+      <table style="border-collapse: collapse; width: 100%;">
+        ${rows}
+      </table>
+    </div>
+  `.trim();
+}
+
+function renderClassScheduleText(slots: BookingSlot[]): string {
+  const lines = [`Full class schedule (${slots.length} classes):`];
+  for (let i = 0; i < slots.length; i++) {
+    const s = slots[i];
+    lines.push(
+      `  #${i + 1}  ${formatRequestedDate(s.date)}  ·  ${formatRequestedTime(s.time)}`
+    );
+  }
+  return lines.join("\n");
 }
 
 function renderDetailsHtml(rows: Array<[string, string]>): string {
@@ -207,13 +257,32 @@ function buildIcsAttachmentFor(p: BookingEmailPayload): Attachment | null {
     ? p.meetingUrl ?? "Online"
     : p.location ?? "Yan Lai Art Studio";
 
-  const uid = `${p.referenceId ?? Date.now().toString(36)}@yanlaiart.com`;
+  const refBase = p.referenceId ?? Date.now().toString(36);
+  // Multi-class courses: one VEVENT per class, each with its own UID so
+  // calendar apps add them as N distinct events (not duplicates of each
+  // other). Single-session items (events, hourly one-offs) still emit
+  // exactly one VEVENT.
+  const slots: BookingSlot[] =
+    p.allSlots && p.allSlots.length > 0
+      ? p.allSlots
+      : [
+          {
+            date: p.requestedDate,
+            time: p.requestedTime,
+            endTime: p.requestedEndTime,
+          },
+        ];
+  const total = slots.length;
+  const events = slots.map((s, i) => ({
+    uid: total > 1 ? `${refBase}-${i + 1}@yanlaiart.com` : `${refBase}@yanlaiart.com`,
+    localDate: s.date,
+    localStartTime: s.time,
+    localEndTime: s.endTime,
+    summarySuffix: total > 1 ? `(Class ${i + 1} of ${total})` : undefined,
+  }));
 
   const ics = buildBookingIcs({
-    uid,
-    localDate: p.requestedDate,
-    localStartTime: p.requestedTime,
-    localEndTime: p.requestedEndTime,
+    events,
     summary,
     description,
     location: icsLocation,
@@ -249,6 +318,12 @@ export async function sendBookingConfirmationToCustomer(
     ? "\nA calendar invite (.ics) is attached to this email — open it to add this session to your calendar.\n"
     : "";
 
+  const hasFullSchedule = Boolean(p.allSlots && p.allSlots.length > 1);
+  const scheduleTextBlock =
+    hasFullSchedule && p.allSlots
+      ? `\n${renderClassScheduleText(p.allSlots)}`
+      : "";
+
   const text = [
     `Hi ${p.customerName},`,
     "",
@@ -257,6 +332,7 @@ export async function sendBookingConfirmationToCustomer(
       : `Thank you for registering for ${p.itemName} with Yan Lai Art.`,
     joinLineText,
     renderDetailsText(rows),
+    scheduleTextBlock,
     p.notes ? `\nYour notes: ${p.notes}` : "",
     calendarLineText,
     closingLine,
@@ -272,9 +348,11 @@ export async function sendBookingConfirmationToCustomer(
     p.isOnline && p.meetingUrl
       ? buildJoinMeetingHtml(p.meetingUrl, p.meetingInstructions)
       : "";
+  const scheduleHtmlBlock =
+    hasFullSchedule && p.allSlots ? renderClassScheduleHtml(p.allSlots) : "";
   const calendarNoteHtml = attachment
     ? `<p style="margin: 0 0 16px; padding: 10px 12px; background: #fef3c7; border-radius: 6px; font-size: 13px; color: #78350f;">
-        📅 A calendar invite is attached to this email — open it to add this session to your calendar${p.isOnline ? " with the meeting link built in" : ""}.
+        📅 A calendar invite is attached to this email — open it to add ${hasFullSchedule ? "all classes" : "this session"} to your calendar${p.isOnline ? " with the meeting link built in" : ""}.
       </p>`
     : "";
 
@@ -298,6 +376,7 @@ export async function sendBookingConfirmationToCustomer(
             : ""
         }
       </table>
+      ${scheduleHtmlBlock}
       ${calendarNoteHtml}
       <p style="margin: 0 0 16px;">${escapeHtml(closingLine)}</p>
       <p style="margin: 0 0 8px; color: #57534e;">If you have any questions, just reply to this email.</p>

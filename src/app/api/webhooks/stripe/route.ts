@@ -3,7 +3,9 @@ import { getStripe } from "@/lib/stripe";
 import Stripe from "stripe";
 import { getCourseBySlug } from "@/data/courses";
 import { getEventBySlug } from "@/data/events";
-import { formatPrice } from "@/lib/utils";
+import { addMinutesToHhmm, formatPrice } from "@/lib/utils";
+import { courseScheduledSlots } from "@/lib/schedule";
+import type { BookingSlot } from "@/lib/email";
 import {
   sendBookingConfirmationToCustomer,
   sendBookingNotificationToOwner,
@@ -62,6 +64,10 @@ export async function POST(request: NextRequest) {
 
     let itemName = "Your booking";
     let itemDetails = "";
+    // For scheduled courses with >1 class, hand the email every (date,
+    // time) slot so it can render the full class list + a multi-event
+    // calendar invite that adds every class in one go.
+    let allSlots: BookingSlot[] | undefined;
     if (itemType === "course") {
       const c = await getCourseBySlug(itemSlug);
       if (c) {
@@ -73,6 +79,15 @@ export async function POST(request: NextRequest) {
         ]
           .filter(Boolean)
           .join(" · ");
+        const slots = courseScheduledSlots(c);
+        if (slots.length > 1) {
+          const durationMin = c.sessionMinutes ?? 60;
+          allSlots = slots.map((s) => ({
+            date: s.date,
+            time: s.time,
+            endTime: addMinutesToHhmm(s.time, durationMin),
+          }));
+        }
       }
     } else {
       const e = await getEventBySlug(itemSlug);
@@ -100,6 +115,7 @@ export async function POST(request: NextRequest) {
         requestedDate: requestedDate || undefined,
         requestedTime: requestedTime || undefined,
         requestedEndTime: requestedEndTime || undefined,
+        allSlots,
         notes: notes || undefined,
         amountLabel: amountLabel || "Paid",
         referenceId: session.id,
